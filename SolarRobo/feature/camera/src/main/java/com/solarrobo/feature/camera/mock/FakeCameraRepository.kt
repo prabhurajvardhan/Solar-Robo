@@ -1,5 +1,7 @@
 package com.solarrobo.feature.camera.mock
 
+import androidx.camera.view.PreviewView
+import androidx.lifecycle.LifecycleOwner
 import com.solarrobo.feature.camera.domain.CameraConnectionState
 import com.solarrobo.feature.camera.domain.CameraFrame
 import com.solarrobo.feature.camera.domain.CameraRepository
@@ -9,6 +11,8 @@ import java.util.UUID
 
 class FakeCameraRepository : CameraRepository {
     override fun observeConnectionState(): Flow<CameraConnectionState> = flowOf(CameraConnectionState.STREAMING)
+
+    override fun bindPreview(previewView: PreviewView, lifecycleOwner: LifecycleOwner): Result<Unit> = Result.success(Unit)
 
     override suspend fun startStream(): Result<Unit> = Result.success(Unit)
 
@@ -20,7 +24,7 @@ class FakeCameraRepository : CameraRepository {
             width = 1920,
             height = 1080,
             timestamp = System.currentTimeMillis(),
-            jpegBytes = ByteArray(0)
+            jpegBytes = byteArrayOf(1, 2, 3)
         )
     )
 }

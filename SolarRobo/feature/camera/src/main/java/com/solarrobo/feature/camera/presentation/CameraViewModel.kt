@@ -1,7 +1,10 @@
 package com.solarrobo.feature.camera.presentation
 
+import androidx.camera.view.PreviewView
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.solarrobo.feature.camera.domain.CameraConnectionState
 import com.solarrobo.feature.camera.domain.CameraRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,13 +31,40 @@ class CameraViewModel @Inject constructor(
         }
     }
 
+    fun bindPreview(previewView: PreviewView, lifecycleOwner: LifecycleOwner) {
+        repository.bindPreview(previewView, lifecycleOwner)
+    }
+
+    fun onPermissionResult(granted: Boolean) {
+        _uiState.update {
+            it.copy(
+                permissionGranted = granted,
+                errorMessage = if (!granted) {
+                    "Camera permission was denied. Enable it in Settings to use the Robo camera."
+                } else {
+                    null
+                }
+            )
+        }
+    }
+
     fun startCamera() {
+        if (!_uiState.value.permissionGranted) {
+            _uiState.update { it.copy(errorMessage = "Camera permission required") }
+            return
+        }
+
         viewModelScope.launch {
             val result = repository.startStream()
             if (result.isFailure) {
-                _uiState.update { it.copy(errorMessage = result.exceptionOrNull()?.message) }
+                _uiState.update {
+                    it.copy(
+                        connectionState = CameraConnectionState.ERROR,
+                        errorMessage = result.exceptionOrNull()?.message ?: "Unable to start camera"
+                    )
+                }
             } else {
-                _uiState.update { it.copy(errorMessage = null) }
+                _uiState.update { it.copy(connectionState = CameraConnectionState.STREAMING, errorMessage = null) }
             }
         }
     }
@@ -42,7 +72,7 @@ class CameraViewModel @Inject constructor(
     fun stopCamera() {
         viewModelScope.launch {
             repository.stopStream()
-            _uiState.update { it.copy(errorMessage = null) }
+            _uiState.update { it.copy(connectionState = CameraConnectionState.DISCONNECTED, errorMessage = null) }
         }
     }
 
@@ -52,7 +82,7 @@ class CameraViewModel @Inject constructor(
             result.onSuccess { frame ->
                 _uiState.update { it.copy(lastCapturedSnapshot = frame, errorMessage = null) }
             }.onFailure { throwable ->
-                _uiState.update { it.copy(errorMessage = throwable.message) }
+                _uiState.update { it.copy(connectionState = CameraConnectionState.ERROR, errorMessage = throwable.message ?: "Snapshot failed") }
             }
         }
     }
