@@ -324,6 +324,16 @@ export default function App() {
   const [simRain, setSimRain] = useState<boolean>(false);
   const [simSafetyState, setSimSafetyState] = useState<string>('NORMAL (Nominal tracking)');
 
+  // Onboarding live preview state
+  const [onbStep, setOnbStep] = useState<'DISCOVERY' | 'CONFIGURATION' | 'COMPLETED'>('DISCOVERY');
+  const [onbScanning, setOnbScanning] = useState(false);
+  const [onbDevices, setOnbDevices] = useState<{ id: string; name: string; rssi: number }[]>([]);
+  const [onbSelectedDevice, setOnbSelectedDevice] = useState<{ id: string; name: string; rssi: number } | null>(null);
+  const [onbConnecting, setOnbConnecting] = useState(false);
+  const [onbName, setOnbName] = useState('Solar Robo Rooftop');
+  const [onbSsid, setOnbSsid] = useState('Home-WiFi');
+  const [onbPass, setOnbPass] = useState('solarpass123');
+
   const handleScenarioChange = (sc: string) => {
     setSimScenario(sc);
     if (sc === 'SUNNY_NORMAL') {
@@ -769,6 +779,145 @@ export default function App() {
                   ))}
                 </ul>
               </div>
+
+              {/* Onboarding Live Interactive Runtime Verification */}
+              {currentModule.id === 'onboarding' && (
+                <div className="p-5 bg-slate-950 rounded-2xl border border-amber-500/30 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                      <h4 className="font-bold text-white text-base">Interactive Module Verification: Onboarding Flow</h4>
+                    </div>
+                    <span className="text-xs font-mono text-amber-400">Step: {onbStep}</span>
+                  </div>
+
+                  {onbStep === 'DISCOVERY' && (
+                    <div className="space-y-3">
+                      <p className="text-xs text-slate-400">
+                        Simulate BLE peripheral scanning to discover nearby Solar Robo microcontrollers.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setOnbScanning(true);
+                          setTimeout(() => {
+                            setOnbScanning(false);
+                            setOnbDevices([
+                              { id: 'ROBO-ESP32-01', name: 'Solar Robo Alpha', rssi: -62 },
+                              { id: 'ROBO-ESP32-02', name: 'Solar Robo Garden Unit', rssi: -78 }
+                            ]);
+                          }, 600);
+                        }}
+                        disabled={onbScanning}
+                        className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl transition"
+                      >
+                        {onbScanning ? 'Scanning Bluetooth LE...' : 'Scan for Nearby Peripherals'}
+                      </button>
+
+                      {onbDevices.length > 0 && (
+                        <div className="space-y-2 pt-2">
+                          <div className="text-xs font-bold text-slate-300 uppercase tracking-wider">Discovered Peripherals (Tap to Pair):</div>
+                          {onbDevices.map((d) => (
+                            <div
+                              key={d.id}
+                              onClick={() => {
+                                setOnbSelectedDevice(d);
+                                setOnbStep('CONFIGURATION');
+                              }}
+                              className="p-3 bg-slate-900 hover:bg-slate-800 rounded-xl border border-slate-800 flex justify-between items-center cursor-pointer transition"
+                            >
+                              <div>
+                                <div className="text-sm font-semibold text-white">{d.name}</div>
+                                <div className="text-xs font-mono text-slate-400">ID: {d.id} • Signal: {d.rssi} dBm</div>
+                              </div>
+                              <span className="text-xs px-2.5 py-1 bg-amber-500/10 text-amber-400 rounded-lg border border-amber-500/20">Select</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {onbStep === 'CONFIGURATION' && (
+                    <div className="space-y-3">
+                      <div className="text-sm font-semibold text-amber-400">
+                        Configuring Device: {onbSelectedDevice?.name} ({onbSelectedDevice?.id})
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                          <label className="text-xs text-slate-400 block mb-1">Friendly Name</label>
+                          <input
+                            type="text"
+                            value={onbName}
+                            onChange={(e) => setOnbName(e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-slate-400 block mb-1">Wi-Fi SSID</label>
+                          <input
+                            type="text"
+                            value={onbSsid}
+                            onChange={(e) => setOnbSsid(e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-slate-400 block mb-1">Wi-Fi Password</label>
+                          <input
+                            type="password"
+                            value={onbPass}
+                            onChange={(e) => setOnbPass(e.target.value)}
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex space-x-2 pt-2">
+                        <button
+                          onClick={() => {
+                            setOnbConnecting(true);
+                            setTimeout(() => {
+                              setOnbConnecting(false);
+                              setOnbStep('COMPLETED');
+                            }, 800);
+                          }}
+                          disabled={onbConnecting}
+                          className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition"
+                        >
+                          {onbConnecting ? 'Verifying BLE Handshake...' : 'Verify Connection & Save'}
+                        </button>
+                        <button
+                          onClick={() => setOnbStep('DISCOVERY')}
+                          className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl transition"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {onbStep === 'COMPLETED' && (
+                    <div className="p-4 bg-emerald-950/20 border border-emerald-900/40 rounded-xl space-y-2">
+                      <div className="flex items-center space-x-2 text-emerald-400 font-bold text-sm">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Pairing Completed Successfully!</span>
+                      </div>
+                      <p className="text-xs text-slate-300">
+                        Device <strong>{onbName}</strong> ({onbSelectedDevice?.id}) is configured. Emitted <code className="text-amber-300">DeviceAdded</code> event to Event Bus. Ready to transition to Command Center.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setOnbStep('DISCOVERY');
+                          setOnbDevices([]);
+                          setOnbSelectedDevice(null);
+                        }}
+                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 rounded-lg transition"
+                      >
+                        Reset Onboarding Simulator
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Skeleton Code Files */}
               <div className="space-y-4">
