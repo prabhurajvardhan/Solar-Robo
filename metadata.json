@@ -1,0 +1,6 @@
+{
+  "name": "Solar Robo - Android System Architecture & Docs",
+  "description": "Comprehensive Android system architecture, module specifications, canonical contracts, folder structure, and skeleton code documentation portal for Solar Robo.",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
