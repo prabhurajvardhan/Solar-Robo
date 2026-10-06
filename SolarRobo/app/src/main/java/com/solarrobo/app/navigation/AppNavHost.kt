@@ -2,9 +2,11 @@ package com.solarrobo.app.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.solarrobo.feature.camera.presentation.CameraScreen
 
 sealed class Screen(val route: String) {
     data object Onboarding : Screen("onboarding")
@@ -34,6 +36,8 @@ fun AppNavHost(
         startDestination = startDestination,
         modifier = modifier
     ) {
-        // Feature routes will be composed here
+        composable(Screen.Camera.route) {
+            CameraScreen(viewModel = hiltViewModel())
+        }
     }
 }
