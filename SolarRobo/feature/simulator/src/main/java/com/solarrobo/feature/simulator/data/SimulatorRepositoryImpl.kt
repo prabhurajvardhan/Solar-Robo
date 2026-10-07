@@ -22,7 +22,7 @@ import javax.inject.Singleton
 import kotlin.math.cos
 import kotlin.math.roundToInt
 
-@Singleton
+@Singleton  
 class SimulatorRepositoryImpl @Inject constructor() : SimulatorRepository {
     private val simulatorState = MutableStateFlow(stateFor(Scenario.SUNNY_NORMAL))
     private val safetyEvents = MutableStateFlow<List<SafetyEvent>>(emptyList())
