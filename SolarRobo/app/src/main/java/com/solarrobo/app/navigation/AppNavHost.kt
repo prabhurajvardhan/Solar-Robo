@@ -7,6 +7,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.solarrobo.feature.camera.presentation.CameraScreen
+import com.solarrobo.feature.notifications.presentation.NotificationsScreen
+import com.solarrobo.feature.settings.presentation.SettingsScreen
 
 sealed class Screen(val route: String) {
     data object Onboarding : Screen("onboarding")
@@ -29,7 +31,7 @@ sealed class Screen(val route: String) {
 fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    startDestination: String = Screen.Home.route
+    startDestination: String = Screen.Notifications.route
 ) {
     NavHost(
         navController = navController,
@@ -38,6 +40,12 @@ fun AppNavHost(
     ) {
         composable(Screen.Camera.route) {
             CameraScreen(viewModel = hiltViewModel())
+        }
+        composable(Screen.Notifications.route) {
+            NotificationsScreen(viewModel = hiltViewModel())
+        }
+        composable(Screen.Settings.route) {
+            SettingsScreen(viewModel = hiltViewModel())
         }
     }
 }

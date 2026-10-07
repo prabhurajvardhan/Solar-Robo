@@ -6,7 +6,19 @@ plugins {
 android {
     namespace = "com.solarrobo.core.contracts"
     compileSdk = 35
-    defaultConfig { minSdk = 26 }
+
+    defaultConfig {
+        minSdk = 26
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
 }
 
 dependencies {
