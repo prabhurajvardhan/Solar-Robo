@@ -9,6 +9,9 @@ enum class ActivityType {
     RECOVERY
 }
 
+/**
+ * Chronological ledger entry capturing state transitions, actions, and events.
+ */
 data class ActivityEvent(
     val id: String,
     val type: ActivityType,

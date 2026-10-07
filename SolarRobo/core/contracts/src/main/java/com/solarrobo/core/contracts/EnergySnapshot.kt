@@ -1,5 +1,8 @@
 package com.solarrobo.core.contracts
 
+/**
+ * Grid connection status for hybrid inverter integration.
+ */
 enum class GridState {
     IMPORTING,
     EXPORT_READY,
@@ -7,6 +10,9 @@ enum class GridState {
     UNKNOWN
 }
 
+/**
+ * Real-time energy telemetry snapshot from onboard power sensors.
+ */
 data class EnergySnapshot(
     val generatedWatts: Float,
     val consumedWatts: Float,
@@ -17,6 +23,9 @@ data class EnergySnapshot(
     val timestamp: Long
 )
 
+/**
+ * Hourly/Daily aggregated energy data point for historical analytics.
+ */
 data class EnergyHistoryPoint(
     val timestamp: Long,
     val generatedWh: Float,

@@ -3,8 +3,12 @@ agp = "8.6.1"
 kotlin = "1.9.24"
 hilt = "2.51.1"
 composeBom = "2024.06.00"
+coroutines = "1.8.1"
+junit = "4.13.2"
 
 [libraries]
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
