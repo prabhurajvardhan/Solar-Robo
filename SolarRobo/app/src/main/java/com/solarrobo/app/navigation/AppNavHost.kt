@@ -6,6 +6,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.solarrobo.feature.activity.presentation.ActivityScreen
 import com.solarrobo.feature.camera.presentation.CameraScreen
 
 sealed class Screen(val route: String) {
@@ -38,6 +39,9 @@ fun AppNavHost(
     ) {
         composable(Screen.Camera.route) {
             CameraScreen(viewModel = hiltViewModel())
+        }
+        composable(Screen.Activity.route) {
+            ActivityScreen(viewModel = hiltViewModel())
         }
     }
 }
