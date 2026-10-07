@@ -2,10 +2,11 @@ package com.solarrobo.app.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.solarrobo.feature.camera.presentation.CameraScreen
 import com.solarrobo.feature.notifications.presentation.NotificationsScreen
 import com.solarrobo.feature.settings.presentation.SettingsScreen
 
@@ -37,6 +38,9 @@ fun AppNavHost(
         startDestination = startDestination,
         modifier = modifier
     ) {
+        composable(Screen.Camera.route) {
+            CameraScreen(viewModel = hiltViewModel())
+        }
         composable(Screen.Notifications.route) {
             NotificationsScreen(viewModel = hiltViewModel())
         }

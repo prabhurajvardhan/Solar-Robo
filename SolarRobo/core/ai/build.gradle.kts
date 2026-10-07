@@ -1,0 +1,13 @@
+plugins {
+    id("com.android.library")
+    id("org.jetbrains.kotlin.android")
+}
+
+android {
+    namespace = "com.solarrobo.core.ai"
+    compileSdk = 35
+
+    defaultConfig {
+        minSdk = 26
+    }
+}
