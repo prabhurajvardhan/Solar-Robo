@@ -25,6 +25,12 @@ object CommonModule {
 
     @Provides
     @Singleton
+    fun provideSettingsChangedEventBus(
+        implementation: InProcessSettingsChangedEventBus
+    ): SettingsChangedEventBus = implementation
+
+    @Provides
+    @Singleton
     @ApplicationScope
     fun provideApplicationScope(): CoroutineScope =
         CoroutineScope(SupervisorJob() + Dispatchers.IO)

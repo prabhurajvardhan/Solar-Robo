@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.solarrobo.feature.notifications.presentation.NotificationsScreen
+import com.solarrobo.feature.settings.presentation.SettingsScreen
 
 sealed class Screen(val route: String) {
     data object Onboarding : Screen("onboarding")
@@ -38,6 +39,9 @@ fun AppNavHost(
     ) {
         composable(Screen.Notifications.route) {
             NotificationsScreen(viewModel = hiltViewModel())
+        }
+        composable(Screen.Settings.route) {
+            SettingsScreen(viewModel = hiltViewModel())
         }
     }
 }
