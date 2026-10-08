@@ -38,9 +38,13 @@ android {
 }
 
 dependencies {
+    implementation(project(":feature:home"))
+    implementation(project(":feature:energy"))
     implementation(project(":feature:camera"))
     implementation(project(":feature:notifications"))
     implementation(project(":feature:settings"))
+    implementation(project(":feature:simulator"))
+    implementation(project(":feature:onboarding"))
 
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.core:core-ktx:1.13.1")

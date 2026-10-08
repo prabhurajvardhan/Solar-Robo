@@ -30,7 +30,10 @@ fun SolarRoboApp() {
             bottomBar = {
                 NavigationBar {
                     listOf(
-                        Screen.Notifications to "Notifications",
+                        Screen.Home to "Home",
+                        Screen.Energy to "Energy",
+                        Screen.Camera to "Camera",
+                        Screen.Notifications to "Alerts",
                         Screen.Settings to "Settings"
                     ).forEach { (screen, label) ->
                         NavigationBarItem(
