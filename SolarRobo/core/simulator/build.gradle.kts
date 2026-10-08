@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.solarrobo.core.device"
+    namespace = "com.solarrobo.core.simulator"
     compileSdk = 35
     defaultConfig { minSdk = 26 }
 }

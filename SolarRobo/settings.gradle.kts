@@ -15,11 +15,33 @@ dependencyResolutionManagement {
 
 rootProject.name = "SolarRobo"
 include(":app")
+
+// Core Modules
 include(":core:contracts")
+include(":core:model")
+include(":core:ui")
 include(":core:common")
+include(":core:device")
+include(":core:ai")
+include(":core:camera")
 include(":core:database")
 include(":core:storage")
+include(":core:network")
+include(":core:simulator")
+
+// Feature Modules (Implemented)
+include(":feature:onboarding")
 include(":feature:camera")
-include(":feature:notifications")
-include(":feature:settings")
 include(":feature:simulator")
+
+// Feature Modules (Planned - Unbuilt)
+// include(":feature:home")
+// include(":feature:energy")
+// include(":feature:control")
+// include(":feature:safety")
+// include(":feature:environment")
+// include(":feature:activity")
+// include(":feature:health")
+// include(":feature:analytics")
+// include(":feature:notifications")
+// include(":feature:settings")

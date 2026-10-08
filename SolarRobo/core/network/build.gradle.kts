@@ -4,13 +4,12 @@ plugins {
 }
 
 android {
-    namespace = "com.solarrobo.core.device"
+    namespace = "com.solarrobo.core.network"
     compileSdk = 35
     defaultConfig { minSdk = 26 }
 }
 
 dependencies {
-    implementation(project(":core:contracts"))
     implementation(libs.kotlinx.coroutines.core)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
