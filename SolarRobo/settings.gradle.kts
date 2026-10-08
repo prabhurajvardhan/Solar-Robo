@@ -27,6 +27,7 @@ include(":core:camera")
 include(":core:database")
 include(":core:storage")
 include(":core:network")
+include(":feature:talk")
 include(":core:simulator")
 
 // Feature Modules (Implemented)
