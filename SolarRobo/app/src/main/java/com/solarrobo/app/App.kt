@@ -34,6 +34,7 @@ fun SolarRoboApp() {
                         Screen.Energy to "Energy",
                         Screen.Camera to "Camera",
                         Screen.Notifications to "Alerts",
+                        Screen.Talk to "Talk",
                         Screen.Settings to "Settings"
                     ).forEach { (screen, label) ->
                         NavigationBarItem(
