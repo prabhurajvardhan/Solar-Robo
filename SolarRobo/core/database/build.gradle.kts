@@ -27,9 +27,9 @@ dependencies {
     implementation(project(":core:contracts"))
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
-    implementation("com.google.dagger:hilt-android:2.50")
+    implementation("com.google.dagger:hilt-android:2.51.1")
     kapt("androidx.room:room-compiler:2.6.1")
-    kapt("com.google.dagger:hilt-compiler:2.50")
+    kapt("com.google.dagger:hilt-compiler:2.51.1")
 }
 
 kapt {

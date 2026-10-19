@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.solarrobo.feature.settings.domain.SettingsPatch
 import com.solarrobo.feature.settings.domain.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.io.IOException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -60,14 +59,12 @@ class SettingsViewModel @Inject constructor(
         loadJob = viewModelScope.launch {
             repository.load()
                 .catch { error ->
-                    if (error is IOException || error is IllegalArgumentException) {
-                        mutableUiState.value = SettingsUiState(
-                            isOffline = true,
-                            errorMessage = error.message ?: "Settings could not be loaded."
-                        )
-                    } else {
-                        throw error
-                    }
+                    // Settings are optional at startup. Device-specific keystore,
+                    // corrupted-store, and filesystem failures must be recoverable.
+                    mutableUiState.value = SettingsUiState(
+                        isOffline = true,
+                        errorMessage = error.message ?: "Settings could not be loaded."
+                    )
                 }
                 .collect { settings ->
                     mutableUiState.value = SettingsUiState(
