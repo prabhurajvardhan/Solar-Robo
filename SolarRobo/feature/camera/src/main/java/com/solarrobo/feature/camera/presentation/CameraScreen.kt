@@ -78,8 +78,9 @@ fun CameraScreen(
                 modifier = Modifier.weight(1f)
             )
 
-            if (state.lastCapturedSnapshot != null) {
-                val bitmap = state.lastCapturedSnapshot.jpegBytes.takeIf { it.isNotEmpty() }
+            val snapshot = state.lastCapturedSnapshot
+            if (snapshot != null) {
+                val bitmap = snapshot.jpegBytes.takeIf { it.isNotEmpty() }
                     ?.let { bytes -> android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }
                 if (bitmap != null) {
                     Image(
@@ -92,8 +93,9 @@ fun CameraScreen(
                 }
             }
 
-            if (state.errorMessage != null) {
-                Text(text = state.errorMessage)
+            val errorMessage = state.errorMessage
+            if (errorMessage != null) {
+                Text(text = errorMessage)
             }
 
             Row(

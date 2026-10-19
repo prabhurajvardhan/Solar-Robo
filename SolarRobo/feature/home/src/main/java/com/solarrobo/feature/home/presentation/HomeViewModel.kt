@@ -20,6 +20,14 @@ class HomeViewModel @Inject constructor(
     private val repository: HomeRepository
 ) : ViewModel() {
 
+    private data class HomeData(
+        val robo: com.solarrobo.core.contracts.RoboSnapshot,
+        val energy: com.solarrobo.core.contracts.EnergySnapshot,
+        val safetyLevel: com.solarrobo.core.contracts.SafetyLevel,
+        val alerts: List<com.solarrobo.core.contracts.SafetyEvent>,
+        val message: String
+    )
+
     private val refreshTriggers = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     val uiState: StateFlow<HomeUiState> = refreshTriggers
@@ -30,18 +38,19 @@ class HomeViewModel @Inject constructor(
                 repository.getEnergySnapshot(),
                 repository.getSafetyLevel(),
                 repository.getActiveSafetyEvents(),
-                repository.getLatestRoboMessage(),
-                repository.getErrorMessage()
-            ) { robo, energy, safety, alerts, message, error ->
+                repository.getLatestRoboMessage()
+            ) { robo, energy, safety, alerts, message ->
+                HomeData(robo, energy, safety, alerts, message)
+            }.combine(repository.getErrorMessage()) { data, error ->
                 if (error != null) {
                     HomeUiState.Error(message = error)
                 } else {
                     HomeUiState.Success(
-                        robo = robo,
-                        energy = energy,
-                        safetyLevel = safety,
-                        activeAlerts = alerts.filter { !it.acknowledged },
-                        statusMessage = message
+                        robo = data.robo,
+                        energy = data.energy,
+                        safetyLevel = data.safetyLevel,
+                        activeAlerts = data.alerts.filter { !it.acknowledged },
+                        statusMessage = data.message
                     )
                 }
             }.onStart {

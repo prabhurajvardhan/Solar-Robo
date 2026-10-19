@@ -1,7 +1,6 @@
 package com.solarrobo.feature.camera.platform
 
 import android.content.Context
-import android.graphics.ImageFormat
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -50,7 +49,6 @@ class CameraXController(
 
             imageCapture = ImageCapture.Builder()
                 .setTargetRotation(view.display?.rotation ?: 0)
-                .setTargetFormat(ImageFormat.JPEG)
                 .build()
 
             cameraProvider?.unbindAll()

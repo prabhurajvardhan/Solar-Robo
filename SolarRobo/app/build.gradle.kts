@@ -38,6 +38,16 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:ai"))
+    implementation(project(":core:camera"))
+    implementation(project(":core:common"))
+    implementation(project(":core:contracts"))
+    implementation(project(":core:database"))
+    implementation(project(":core:device"))
+    implementation(project(":core:network"))
+    implementation(project(":core:simulator"))
+    implementation(project(":core:storage"))
+    implementation(project(":core:ui"))
     implementation(project(":feature:home"))
     implementation(project(":feature:energy"))
     implementation(project(":feature:camera"))
@@ -62,6 +72,9 @@ dependencies {
 
     implementation("com.google.dagger:hilt-android:2.51.1")
     kapt("com.google.dagger:hilt-compiler:2.51.1")
+
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
