@@ -8,6 +8,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,9 +29,12 @@ fun Composer(
         OutlinedTextField(
             value = text,
             onValueChange = onTextChange,
-            placeholder = { Text("Type a message...") },
-            singleLine = true,
+            label = { Text("Message") },
+            placeholder = { Text("Ask about panels, battery, wind, or safety") },
+            minLines = 1,
+            maxLines = 4,
             enabled = !isSending,
+            keyboardOptions = KeyboardOptions.Default,
             modifier = Modifier.weight(1f)
         )
         Button(

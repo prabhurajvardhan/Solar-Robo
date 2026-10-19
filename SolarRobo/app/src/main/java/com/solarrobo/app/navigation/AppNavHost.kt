@@ -13,6 +13,7 @@ import com.solarrobo.feature.notifications.presentation.NotificationsScreen
 import com.solarrobo.feature.onboarding.presentation.OnboardingScreen
 import com.solarrobo.feature.settings.presentation.SettingsScreen
 import com.solarrobo.feature.simulator.presentation.SimulatorScreen
+import com.solarrobo.feature.talk.presentation.TalkScreen
 
 sealed class Screen(val route: String) {
     data object Onboarding : Screen("onboarding")
@@ -28,6 +29,7 @@ sealed class Screen(val route: String) {
     data object Notifications : Screen("notifications")
     data object Settings : Screen("settings")
     data object Simulator : Screen("simulator")
+    data object Talk : Screen("talk")
 }
 
 @Composable
@@ -67,6 +69,9 @@ fun AppNavHost(
         }
         composable(Screen.Simulator.route) {
             SimulatorScreen(viewModel = hiltViewModel())
+        }
+        composable(Screen.Talk.route) {
+            TalkScreen(viewModel = hiltViewModel())
         }
         composable(Screen.Onboarding.route) {
             OnboardingScreen(

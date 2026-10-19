@@ -26,6 +26,7 @@ dependencies {
     implementation(project(":core:ai"))
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.0")
     implementation(platform("androidx.compose:compose-bom:2024.04.01"))
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui")

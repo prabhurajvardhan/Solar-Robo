@@ -1,7 +1,5 @@
 package com.solarrobo.app.di
 
-import com.solarrobo.core.ai.AiEngine
-import com.solarrobo.core.ai.FakeAiEngine
 import com.solarrobo.core.camera.CameraProvider
 import com.solarrobo.core.camera.FakeCameraProvider
 import com.solarrobo.core.common.AppDispatchers
@@ -43,10 +41,6 @@ object AppModule {
     @Provides
     @Singleton
     fun provideSimulatorEngine(): SimulatorEngine = SimulatorEngineImpl()
-
-    @Provides
-    @Singleton
-    fun provideAiEngine(): AiEngine = FakeAiEngine()
 
     @Provides
     @Singleton
