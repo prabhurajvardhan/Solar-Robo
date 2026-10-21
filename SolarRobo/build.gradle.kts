@@ -10,6 +10,14 @@ plugins {
 }
 
 subprojects {
+    configurations.configureEach {
+        resolutionStrategy.force("org.jetbrains.kotlin:kotlin-stdlib:1.9.24")
+        resolutionStrategy.force("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
+        resolutionStrategy.force("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.8.1")
+        resolutionStrategy.force("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+        resolutionStrategy.force("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+        resolutionStrategy.force("org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:1.8.1")
+    }
     plugins.withId("com.android.application") {
         extensions.configure<ApplicationExtension> {
             compileOptions {

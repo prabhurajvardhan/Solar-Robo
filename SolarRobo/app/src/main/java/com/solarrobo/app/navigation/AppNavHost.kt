@@ -6,6 +6,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.solarrobo.app.presentation.OperationsScreen
+import com.solarrobo.app.presentation.ModelLibraryScreen
 import com.solarrobo.feature.camera.presentation.CameraScreen
 import com.solarrobo.feature.energy.presentation.EnergyScreen
 import com.solarrobo.feature.home.presentation.HomeScreen
@@ -30,6 +32,7 @@ sealed class Screen(val route: String) {
     data object Settings : Screen("settings")
     data object Simulator : Screen("simulator")
     data object Talk : Screen("talk")
+    data object Models : Screen("models")
 }
 
 @Composable
@@ -47,9 +50,10 @@ fun AppNavHost(
             HomeScreen(
                 viewModel = hiltViewModel(),
                 onNavigateToEnergy = { navController.navigate(Screen.Energy.route) },
+                onNavigateToControl = { navController.navigate(Screen.Control.route) },
+                onNavigateToSafety = { navController.navigate(Screen.Safety.route) },
                 onNavigateToCamera = { navController.navigate(Screen.Camera.route) },
-                onNavigateToSimulator = { navController.navigate(Screen.Simulator.route) },
-                onNavigateToSafety = { navController.navigate(Screen.Notifications.route) }
+                onNavigateToSimulator = { navController.navigate(Screen.Simulator.route) }
             )
         }
         composable(Screen.Energy.route) {
@@ -82,6 +86,27 @@ fun AppNavHost(
                     }
                 }
             )
+        }
+        composable(Screen.Control.route) {
+            OperationsScreen("Tracker Control", "control", { navController.popBackStack() })
+        }
+        composable(Screen.Safety.route) {
+            OperationsScreen("Safety & Emergency", "safety", { navController.popBackStack() })
+        }
+        composable(Screen.Environment.route) {
+            OperationsScreen("Environment Array", "environment", { navController.popBackStack() })
+        }
+        composable(Screen.Activity.route) {
+            OperationsScreen("Activity Ledger", "activity", { navController.popBackStack() })
+        }
+        composable(Screen.Health.route) {
+            OperationsScreen("Subsystem Diagnostics", "health", { navController.popBackStack() })
+        }
+        composable(Screen.Analytics.route) {
+            OperationsScreen("Yield Analytics", "analytics", { navController.popBackStack() })
+        }
+        composable(Screen.Models.route) {
+            ModelLibraryScreen(onBack = { navController.popBackStack() })
         }
     }
 }

@@ -1,11 +1,10 @@
 package com.solarrobo.core.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
-private val DarkColorScheme = darkColorScheme(
+private val SolarColorScheme = lightColorScheme(
     primary = SolarAmber,
     onPrimary = DarkBackground,
     secondary = SolarSky,
@@ -23,11 +22,11 @@ private val DarkColorScheme = darkColorScheme(
 
 @Composable
 fun SolarRoboTheme(
-    darkTheme: Boolean = true, // Solar Robo defaults to a focused dark tech theme
+    darkTheme: Boolean = false,
     content: @Composable () -> Unit
 ) {
     MaterialTheme(
-        colorScheme = DarkColorScheme,
+        colorScheme = SolarColorScheme,
         typography = SolarTypography,
         content = content
     )

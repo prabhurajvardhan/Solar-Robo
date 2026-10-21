@@ -18,49 +18,56 @@ class OnDeviceSolarAiEngine @Inject constructor() : AiEngine {
             message.matches(Regex("(hi|hello|hey|namaste)[!. ]*")) ->
                 AiResponse(
                     text = "Hey, solar explorer! I’m Robo, your tiny solar engineer. " +
-                        "Ask me about panels, battery, wind, or safety.",
+                        "Ask me about panels, battery, wind, or safety. I promise not to tell " +
+                        "a sun joke unless the forecast is bright.",
                     intent = "GREETING",
                     confidence = 0.99f
                 )
             "battery" in message || "charge" in message ->
                 AiResponse(
                     text = "The battery is ready for duty. I can explain its reserve, charging " +
-                        "trend, and safe operating limits when live telemetry is connected.",
+                        "trend, and safe operating limits when live telemetry is connected. " +
+                        "It is charged with ambition and electrons.",
                     intent = "BATTERY_STATUS",
                     confidence = 0.88f
                 )
             "panel" in message && ("angle" in message || "tilt" in message || "position" in message) ->
                 AiResponse(
                     text = "Panel geometry is my favourite kind of geometry! The tracker should " +
-                        "follow the sun smoothly while the Safety Gate protects the mechanics.",
+                        "follow the sun smoothly while the Safety Gate protects the mechanics. " +
+                        "Good angles are acute; risky angles are obtuse.",
                     intent = "PANEL_POSITION",
                     confidence = 0.91f
                 )
             "wind" in message || "storm" in message || "rain" in message ->
                 AiResponse(
                     text = "If weather turns fierce, I favour safe stow over brave guesses. " +
-                        "The deterministic Safety Gate must approve every movement.",
+                        "The deterministic Safety Gate must approve every movement. " +
+                        "Weather gets the final word; clouds are surprisingly bossy.",
                     intent = "WEATHER_SAFETY",
                     confidence = 0.93f
                 )
             "safety" in message || "protect" in message || "fault" in message ->
                 AiResponse(
                     text = "Safety first, sunlight second! I can explain alerts, but I never " +
-                        "send hardware commands directly; the Safety Gate remains in charge.",
+                        "send hardware commands directly; the Safety Gate remains in charge. " +
+                        "I am the helpful narrator, not the motor’s boss.",
                     intent = "SAFETY_EXPLANATION",
                     confidence = 0.94f
                 )
             "hello" in message || "help" in message || "what can" in message ->
                 AiResponse(
                     text = "I can chat about solar generation, panel tracking, battery reserve, " +
-                        "weather, and safety. I work offline while the compact model is prepared.",
+                        "weather, and safety. I work offline while the compact model is prepared. " +
+                        "Small package, big solar personality.",
                     intent = "CAPABILITIES",
                     confidence = 0.84f
                 )
             else ->
                 AiResponse(
                     text = "I’m still learning that solar puzzle. Try asking about the battery, " +
-                        "panel angle, wind, rain, or safety.",
+                        "panel angle, wind, rain, or safety. I may not know every puzzle yet, " +
+                        "but I know where the sun is supposed to be.",
                     intent = "UNKNOWN",
                     confidence = 0.55f
                 )

@@ -6,7 +6,7 @@ plugins {
 android {
     namespace = "com.solarrobo.core.ai"
     compileSdk = 35
-    defaultConfig { minSdk = 26 }
+    defaultConfig { minSdk = 30 }
 }
 
 dependencies {
