@@ -7,7 +7,9 @@ data class UserSettings(
     val notificationsEnabled: Boolean = true,
     val highWindAlertsEnabled: Boolean = true,
     val voiceFeedbackEnabled: Boolean = false,
-    val temperatureUnitCelsius: Boolean = true
+    val temperatureUnitCelsius: Boolean = true,
+    val latitudeDeg: Double? = null,
+    val longitudeDeg: Double? = null
 )
 
 data class SettingsPatch(
@@ -15,7 +17,9 @@ data class SettingsPatch(
     val notificationsEnabled: Boolean? = null,
     val highWindAlertsEnabled: Boolean? = null,
     val voiceFeedbackEnabled: Boolean? = null,
-    val temperatureUnitCelsius: Boolean? = null
+    val temperatureUnitCelsius: Boolean? = null,
+    val latitudeDeg: Double? = null,
+    val longitudeDeg: Double? = null
 )
 
 interface SettingsRepository {

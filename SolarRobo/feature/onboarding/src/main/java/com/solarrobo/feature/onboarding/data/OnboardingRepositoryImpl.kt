@@ -13,12 +13,8 @@ class OnboardingRepositoryImpl @Inject constructor(
 ) : OnboardingRepository {
 
     override fun scanDevices(): Flow<List<DeviceCandidate>> = flow {
-        // Discovery flow emitting detected Bluetooth LE peripherals
-        val candidates = listOf(
-            DeviceCandidate("ROBO-ESP32-01", "Solar Robo Alpha", -62),
-            DeviceCandidate("ROBO-ESP32-02", "Solar Robo Garden Unit", -78)
-        )
-        emit(candidates)
+        // Wi-Fi discovery itself is user-mediated by WifiNetworkSpecifier; don't fabricate devices.
+        emit(listOf(DeviceCandidate("SolarTracker", "SolarTracker Wi-Fi controller", 0)))
     }
 
     override suspend fun connectDevice(deviceId: String): Result<Unit> {

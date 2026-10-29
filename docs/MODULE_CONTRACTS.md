@@ -307,3 +307,10 @@ interface AiEngine {
     suspend fun generate(request: AiRequest): AiResponse
 }
 ```
+
+
+## Sensorless single-axis tracker contracts (implementation update)
+
+The sensorless tracker implementation adds canonical shared models in `SolarRobo/core/contracts/TrackerContracts.kt`: `LinkState`, `AngleSource`, `WindRisk`, `TrackerFault`, `TrackerSnapshot`, `SkyObservation`, `EnergyEstimate`, `CalibrationStep`, and `TrackerEngine`. `TrackerSnapshot` angles are east-positive tilts from flat and estimates, not encoder readings. `SkyObservation` values are camera-derived heuristics and must not be described as physical weather-sensor measurements. `RoboSnapshot.generationWatts` and `batteryPercent` are nullable; `null` means not measured. Legacy `EnvironmentSnapshot` and `EnergySnapshot` remain in the project during migration and must not be used to present nonexistent physical sensor data as live telemetry.
+
+The local `TrackerLogRecord`/`TrackerLogSink` contracts carry only derived frame statistics and controller state (never image bytes). `:core:database` stores the tracker.py-compatible `tracker_log` columns in Room, rolls complete UTC days older than 90 days into `tracker_daily_summary`, and then prunes the raw rows. Insights reads these local records and exports only the latest 2,000 detailed cycles as CSV.

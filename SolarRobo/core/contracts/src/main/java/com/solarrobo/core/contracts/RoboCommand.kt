@@ -10,7 +10,10 @@ sealed interface RoboCommand {
     /** Immediately stop motor actuation */
     data object StopMotion : RoboCommand
 
-    /** Move panel to flat, aerodynamically neutral stow position (0 deg) */
+    /** Declare that the panel is physically flat now; this does not itself move the motor. */
+    data object Home : RoboCommand
+
+    /** Request a calibrated controller to move the panel to flat (0 deg). */
     data object SafePosition : RoboCommand
 }
 

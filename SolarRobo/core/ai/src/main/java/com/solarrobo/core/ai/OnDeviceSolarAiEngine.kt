@@ -3,74 +3,28 @@ package com.solarrobo.core.ai
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * Deterministic, zero-network assistant used until a quantized local model runtime is supplied.
- *
- * This implementation is deliberately allocation-light and safe for entry-level devices. It is
- * not a neural model and must be replaced by a ternary/quantized backend behind [AiEngine] before
- * production claims are made about natural-language coverage.
- */
+/** Small deterministic offline guidance engine; it has no model files, downloads, or actuation API. */
 @Singleton
 class OnDeviceSolarAiEngine @Inject constructor() : AiEngine {
     override suspend fun generate(request: AiRequest): AiResponse {
         val message = request.message.trim().lowercase()
         return when {
             message.matches(Regex("(hi|hello|hey|namaste)[!. ]*")) ->
-                AiResponse(
-                    text = "Hey, solar explorer! I’m Robo, your tiny solar engineer. " +
-                        "Ask me about panels, battery, wind, or safety. I promise not to tell " +
-                        "a sun joke unless the forecast is bright.",
-                    intent = "GREETING",
-                    confidence = 0.99f
-                )
-            "battery" in message || "charge" in message ->
-                AiResponse(
-                    text = "The battery is ready for duty. I can explain its reserve, charging " +
-                        "trend, and safe operating limits when live telemetry is connected. " +
-                        "It is charged with ambition and electrons.",
-                    intent = "BATTERY_STATUS",
-                    confidence = 0.88f
-                )
+                AiResponse("Hello. I can explain tracker setup and safety. I do not control the motor.", "GREETING", 0.99f)
+            "battery" in message || "charge" in message || "power" in message ->
+                AiResponse("Battery charge and electrical output are not measured by the current hardware. The app will keep those fields as Not measured.", "TELEMETRY_UNAVAILABLE", 0.97f)
             "panel" in message && ("angle" in message || "tilt" in message || "position" in message) ->
-                AiResponse(
-                    text = "Panel geometry is my favourite kind of geometry! The tracker should " +
-                        "follow the sun smoothly while the Safety Gate protects the mechanics. " +
-                        "Good angles are acute; risky angles are obtuse.",
-                    intent = "PANEL_POSITION",
-                    confidence = 0.91f
-                )
-            "wind" in message || "storm" in message || "rain" in message ->
-                AiResponse(
-                    text = "If weather turns fierce, I favour safe stow over brave guesses. " +
-                        "The deterministic Safety Gate must approve every movement. " +
-                        "Weather gets the final word; clouds are surprisingly bossy.",
-                    intent = "WEATHER_SAFETY",
-                    confidence = 0.93f
-                )
-            "safety" in message || "protect" in message || "fault" in message ->
-                AiResponse(
-                    text = "Safety first, sunlight second! I can explain alerts, but I never " +
-                        "send hardware commands directly; the Safety Gate remains in charge. " +
-                        "I am the helpful narrator, not the motor’s boss.",
-                    intent = "SAFETY_EXPLANATION",
-                    confidence = 0.94f
-                )
-            "hello" in message || "help" in message || "what can" in message ->
-                AiResponse(
-                    text = "I can chat about solar generation, panel tracking, battery reserve, " +
-                        "weather, and safety. I work offline while the compact model is prepared. " +
-                        "Small package, big solar personality.",
-                    intent = "CAPABILITIES",
-                    confidence = 0.84f
-                )
+                AiResponse("Panel angle is an estimate from dead reckoning and camera re-homing, not an encoder measurement. It remains unavailable until setup and calibration are complete.", "PANEL_POSITION", 0.93f)
+            "wind" in message || "storm" in message || "rain" in message || "weather" in message ->
+                AiResponse("The tracker has no physical wind or rain sensor. Camera-frame jitter is only a wind-risk heuristic; it cannot guarantee storm protection. Follow local safety guidance and use the physical stop or power disconnect if needed.", "WEATHER_SAFETY", 0.99f)
+            "camera" in message || "sun" in message ->
+                AiResponse("The camera can provide a sun-blob observation and relative sky statistics when enabled. Use a proper dark solar filter; never point an unfiltered phone camera at the sun.", "CAMERA_GUIDANCE", 0.97f)
+            "safety" in message || "protect" in message || "fault" in message || "stop" in message ->
+                AiResponse("The SafetyGate must approve every motion command. E-stop requests a motor stop; if the controller is offline, disconnect motor-driver power locally. Resume is explicit.", "SAFETY_EXPLANATION", 0.97f)
+            "hello" in message || "help" in message || "what can" in message || "setup" in message ->
+                AiResponse("I provide fixed offline guidance about Wi-Fi setup, single-axis tracking, camera safety, and unknown measurements. I do not forecast weather, infer battery charge, or issue motor commands.", "CAPABILITIES", 0.90f)
             else ->
-                AiResponse(
-                    text = "I’m still learning that solar puzzle. Try asking about the battery, " +
-                        "panel angle, wind, rain, or safety. I may not know every puzzle yet, " +
-                        "but I know where the sun is supposed to be.",
-                    intent = "UNKNOWN",
-                    confidence = 0.55f
-                )
+                AiResponse("I don't have a rule for that question yet. Try asking about setup, the camera filter, tracking calibration, unknown telemetry, or safety.", "UNKNOWN", 0.55f)
         }
     }
 }

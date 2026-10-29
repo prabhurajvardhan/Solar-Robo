@@ -1,0 +1,15 @@
+{
+  "optimizer": "Adam",
+  "learning_rate": 0.0002,
+  "batch_size": 24,
+  "maximum_epochs": 8,
+  "early_stopping": "val_loss patience=2 restore_best_weights",
+  "fine_tuned_layers": "MobileNetV3Small last 35 non-BatchNorm layers; earlier layers frozen",
+  "augmentation": [
+    "horizontal flip",
+    "contrast 0.12"
+  ],
+  "class_imbalance": "inverse-frequency class weights",
+  "partition_seed": 41,
+  "partitioning": "GroupShuffleSplit by camera/site token + capture date; test 20%, validation 10% approx."
+}

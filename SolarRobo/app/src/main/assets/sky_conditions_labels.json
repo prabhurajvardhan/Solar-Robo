@@ -1,0 +1,14 @@
+{
+  "input_size": 160,
+  "labels": [
+    "clear",
+    "fair_weather_cumulus",
+    "overcast_or_stratus",
+    "towering_cumulus",
+    "cumulonimbus_or_storm_like",
+    "fog_or_obscured_sky",
+    "rain_or_precipitation"
+  ],
+  "minimum_confidence": 0.3,
+  "dataset": "WEBCAM v1.0"
+}

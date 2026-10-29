@@ -1,5 +1,11 @@
 package com.solarrobo.feature.settings.presentation
 
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.os.PowerManager
+import android.provider.Settings
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -13,16 +19,27 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.solarrobo.feature.settings.components.GeneralSettings
 import com.solarrobo.feature.settings.components.NotificationSettings
 import com.solarrobo.feature.settings.components.VoiceSettings
@@ -122,6 +139,12 @@ private fun SettingsContent(
                 enabled = settings.voiceFeedbackEnabled,
                 onToggle = { onUpdate(SettingsPatch(voiceFeedbackEnabled = it)) }
             )
+            TrackerLocationSettings(
+                latitudeDeg = settings.latitudeDeg,
+                longitudeDeg = settings.longitudeDeg,
+                onSave = { latitude, longitude -> onUpdate(SettingsPatch(latitudeDeg = latitude, longitudeDeg = longitude)) }
+            )
+            BatteryOptimizationSettings()
         }
         Spacer(Modifier.height(8.dp))
         OutlinedButton(
@@ -129,6 +152,69 @@ private fun SettingsContent(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Restore defaults")
+        }
+    }
+}
+
+@Composable
+private fun TrackerLocationSettings(
+    latitudeDeg: Double?,
+    longitudeDeg: Double?,
+    onSave: (Double, Double) -> Unit
+) {
+    var latitude by remember(latitudeDeg) { mutableStateOf(latitudeDeg?.toString().orEmpty()) }
+    var longitude by remember(longitudeDeg) { mutableStateOf(longitudeDeg?.toString().orEmpty()) }
+    var error by remember { mutableStateOf<String?>(null) }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Tracker location", style = MaterialTheme.typography.titleMedium)
+        Text("Used for the sun-position calculation; coordinates stay on this device.", style = MaterialTheme.typography.bodySmall)
+        OutlinedTextField(latitude, { latitude = it }, label = { Text("Latitude (−90 to 90)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(longitude, { longitude = it }, label = { Text("Longitude (−180 to 180)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth())
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        Button(onClick = {
+            val lat = latitude.toDoubleOrNull()
+            val lon = longitude.toDoubleOrNull()
+            error = when {
+                lat == null || lon == null -> "Enter both coordinates as decimal degrees."
+                lat !in -90.0..90.0 || lon !in -180.0..180.0 -> "Coordinates are outside the valid range."
+                else -> null
+            }
+            if (error == null) onSave(lat!!, lon!!)
+        }, modifier = Modifier.fillMaxWidth()) { Text("Save tracker location") }
+    }
+}
+
+@Composable
+private fun BatteryOptimizationSettings() {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var exempt by remember { mutableStateOf(false) }
+    fun refresh() {
+        exempt = Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
+            context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(context.packageName)
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_RESUME) refresh() }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        refresh()
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Background tracking", style = MaterialTheme.typography.titleMedium)
+        Text(
+            if (exempt) "Battery optimization exemption is enabled."
+            else "Battery optimization may pause background tracking. Exemption is currently not enabled.",
+            style = MaterialTheme.typography.bodySmall
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !exempt) {
+            OutlinedButton(onClick = {
+                val request = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = Uri.parse("package:${context.packageName}")
+                }
+                runCatching { context.startActivity(request) }.onFailure {
+                    context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                }
+            }, modifier = Modifier.fillMaxWidth()) { Text("Review battery-optimization setting") }
         }
     }
 }

@@ -72,7 +72,7 @@ fun ErrorView(
 private fun ErrorViewPreview() {
     SolarRoboTheme {
         ErrorView(
-            message = "Unable to connect to Solar Robo device via BLE.",
+            message = "Unable to connect to the SolarTracker Wi-Fi access point.",
             onRetry = {}
         )
     }

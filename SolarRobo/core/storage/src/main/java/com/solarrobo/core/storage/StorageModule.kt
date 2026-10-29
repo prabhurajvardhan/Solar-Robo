@@ -14,4 +14,16 @@ abstract class StorageModule {
     abstract fun bindSecurePreferencesStore(
         implementation: EncryptedPreferencesDataStore
     ): SecurePreferencesStore
+
+    @Binds
+    @Singleton
+    abstract fun bindPreferenceStorage(
+        implementation: DataStorePreferenceStorage
+    ): PreferenceStorage
+
+    @Binds
+    @Singleton
+    abstract fun bindTrackerStateStore(
+        implementation: DataStoreTrackerStateStore
+    ): com.solarrobo.core.tracker.TrackerStateStore
 }

@@ -1,0 +1,201 @@
+{
+  "model": "MobileNetV3Small fine-tuned from ImageNet weights",
+  "dataset": "WEBCAM v1.0",
+  "dataset_release_url": "https://github.com/MarcusCoteFIT/webcam-ground-based-cloud-image-dataset/releases/tag/v1.0",
+  "dataset_archive_sha256": "44aadeb0b8b68cdbb8a222f561d69e398a03e96b0e37465559a98ab3eccd3201",
+  "dataset_images_used": 11306,
+  "all_selected_class_counts": {
+    "towering_cumulus": 1059,
+    "fog_or_obscured_sky": 1896,
+    "fair_weather_cumulus": 2626,
+    "overcast_or_stratus": 1321,
+    "clear": 2600,
+    "rain_or_precipitation": 1028,
+    "cumulonimbus_or_storm_like": 776
+  },
+  "excluded_source_labels": {
+    "ac": "altocumulus has no dedicated target class",
+    "ci": "cirrus has no dedicated target class"
+  },
+  "class_order": [
+    "clear",
+    "fair_weather_cumulus",
+    "overcast_or_stratus",
+    "towering_cumulus",
+    "cumulonimbus_or_storm_like",
+    "fog_or_obscured_sky",
+    "rain_or_precipitation"
+  ],
+  "grouping": "capture source/camera token plus capture day; groups disjoint across partitions",
+  "split_counts": {
+    "train": {
+      "images": 7882,
+      "groups": 1363,
+      "classes": {
+        "towering_cumulus": 816,
+        "fog_or_obscured_sky": 1188,
+        "fair_weather_cumulus": 1708,
+        "overcast_or_stratus": 1028,
+        "clear": 1711,
+        "rain_or_precipitation": 780,
+        "cumulonimbus_or_storm_like": 651
+      }
+    },
+    "validation": {
+      "images": 1144,
+      "groups": 195,
+      "classes": {
+        "towering_cumulus": 79,
+        "fog_or_obscured_sky": 253,
+        "fair_weather_cumulus": 325,
+        "overcast_or_stratus": 59,
+        "clear": 345,
+        "rain_or_precipitation": 65,
+        "cumulonimbus_or_storm_like": 18
+      }
+    },
+    "test": {
+      "images": 2280,
+      "groups": 390,
+      "classes": {
+        "towering_cumulus": 164,
+        "fog_or_obscured_sky": 455,
+        "fair_weather_cumulus": 593,
+        "overcast_or_stratus": 234,
+        "clear": 544,
+        "rain_or_precipitation": 183,
+        "cumulonimbus_or_storm_like": 107
+      }
+    }
+  },
+  "epochs_completed": 3,
+  "heldout_test": {
+    "accuracy": 0.825,
+    "macro_f1": 0.7001629137004503,
+    "per_class_precision": {
+      "clear": 0.9861660079051383,
+      "fair_weather_cumulus": 0.7478510028653295,
+      "overcast_or_stratus": 0.8974358974358975,
+      "towering_cumulus": 0.4696132596685083,
+      "cumulonimbus_or_storm_like": 0.2727272727272727,
+      "fog_or_obscured_sky": 0.9622222222222222,
+      "rain_or_precipitation": 0.706140350877193
+    },
+    "per_class_recall": {
+      "clear": 0.9172794117647058,
+      "fair_weather_cumulus": 0.8802698145025295,
+      "overcast_or_stratus": 0.7478632478632479,
+      "towering_cumulus": 0.5182926829268293,
+      "cumulonimbus_or_storm_like": 0.056074766355140186,
+      "fog_or_obscured_sky": 0.9516483516483516,
+      "rain_or_precipitation": 0.8797814207650273
+    },
+    "per_class_f1": {
+      "clear": 0.9504761904761905,
+      "fair_weather_cumulus": 0.8086754453911696,
+      "overcast_or_stratus": 0.8158508158508159,
+      "towering_cumulus": 0.4927536231884058,
+      "cumulonimbus_or_storm_like": 0.09302325581395349,
+      "fog_or_obscured_sky": 0.9569060773480663,
+      "rain_or_precipitation": 0.7834549878345499
+    },
+    "confusion_matrix_rows_true_cols_pred": [
+      [
+        499,
+        28,
+        4,
+        4,
+        4,
+        5,
+        0
+      ],
+      [
+        2,
+        522,
+        0,
+        48,
+        9,
+        1,
+        11
+      ],
+      [
+        0,
+        2,
+        175,
+        4,
+        0,
+        6,
+        47
+      ],
+      [
+        0,
+        76,
+        0,
+        85,
+        3,
+        0,
+        0
+      ],
+      [
+        2,
+        65,
+        0,
+        33,
+        6,
+        0,
+        1
+      ],
+      [
+        0,
+        1,
+        13,
+        0,
+        0,
+        433,
+        8
+      ],
+      [
+        3,
+        4,
+        3,
+        7,
+        0,
+        5,
+        161
+      ]
+    ]
+  },
+  "confidence_threshold": 0.3,
+  "threshold_policy": "Lowest validation cutoff targeting >=80% selective accuracy at >=20% coverage; 0.70 fallback if no cutoff met. Softmax score is not a calibrated storm probability.",
+  "validation_threshold_result": {
+    "threshold": 0.3,
+    "coverage": 0.9938811188811189,
+    "selective_accuracy": 0.8654353562005277
+  },
+  "model_file": "/tmp/solar-robo-repo/SolarRobo/app/src/main/assets/sky_conditions.tflite",
+  "model_bytes": 1117432,
+  "sandbox_cpu_latency_ms_30_runs_after_5_warmups": {
+    "median": 1.4388799995685986,
+    "p95": 1.648451550227037
+  },
+  "device_latency_note": "Measured on this sandbox CPU only; target Android phone not benchmarked.",
+  "dataset_license_note": "WEBCAM release/paper state public availability for research purposes; no dataset-specific license was present in inspected source. This derived model is delivered only for non-commercial evaluation; confirm permissions before commercial redistribution.",
+  "training_wall_seconds": 182.6,
+  "seed": 41,
+  "image_size": 160,
+  "training_configuration": {
+    "optimizer": "Adam",
+    "learning_rate": 0.0002,
+    "batch_size": 24,
+    "maximum_epochs": 8,
+    "early_stopping": "val_loss patience=2 restore_best_weights",
+    "fine_tuned_layers": "MobileNetV3Small last 35 non-BatchNorm layers; earlier layers frozen",
+    "augmentation": [
+      "horizontal flip",
+      "contrast 0.12"
+    ],
+    "class_imbalance": "inverse-frequency class weights",
+    "partition_seed": 41,
+    "partitioning": "GroupShuffleSplit by camera/site token + capture date; test 20%, validation 10% approx."
+  }
+}

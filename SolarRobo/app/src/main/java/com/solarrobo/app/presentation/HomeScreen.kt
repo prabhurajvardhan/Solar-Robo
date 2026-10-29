@@ -1,6 +1,5 @@
 package com.solarrobo.app.presentation
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,73 +8,51 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.SettingsInputAntenna
-import androidx.compose.material.icons.filled.Shield
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Thermostat
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.solarrobo.core.contracts.RoboMode
-import com.solarrobo.core.contracts.SafetyLevel
-import com.solarrobo.core.ui.components.MetricItem
-import com.solarrobo.core.ui.components.SolarCard
-import com.solarrobo.core.ui.components.StatusBadge
-import com.solarrobo.core.ui.theme.DarkBackground
-import com.solarrobo.core.ui.theme.DarkBorder
-import com.solarrobo.core.ui.theme.DarkCard
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.solarrobo.app.weather.WeatherUiState
 import com.solarrobo.core.ui.theme.SolarAmber
-import com.solarrobo.core.ui.theme.SolarEmerald
 import com.solarrobo.core.ui.theme.SolarRoboTheme
-import com.solarrobo.core.ui.theme.SolarRose
-import com.solarrobo.core.ui.theme.SolarSky
-import com.solarrobo.core.ui.theme.TextMuted
-import com.solarrobo.core.ui.theme.TextPrimary
-import com.solarrobo.core.ui.theme.TextSecondary
+import com.solarrobo.core.weather.AdvisoryAction
 
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
+    weatherViewModel: WeatherViewModel,
     onNavigateToSimulator: () -> Unit,
     onNavigateToCamera: () -> Unit,
     onNavigateToOnboarding: () -> Unit,
     onNavigateToRoute: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val weather by weatherViewModel.uiState.collectAsStateWithLifecycle()
     HomeScreenContent(
         state = state,
+        weather = weather,
         onNavigateToSimulator = onNavigateToSimulator,
         onNavigateToCamera = onNavigateToCamera,
         onNavigateToOnboarding = onNavigateToOnboarding,
         onNavigateToRoute = onNavigateToRoute,
         onRefreshAi = viewModel::refreshAiSummary,
+        onRefreshWeather = weatherViewModel::refresh,
         modifier = modifier
     )
 }
@@ -83,266 +60,116 @@ fun HomeScreen(
 @Composable
 fun HomeScreenContent(
     state: HomeUiState,
+    weather: WeatherUiState,
     onNavigateToSimulator: () -> Unit,
     onNavigateToCamera: () -> Unit,
     onNavigateToOnboarding: () -> Unit,
     onNavigateToRoute: (String) -> Unit,
     onRefreshAi: () -> Unit,
+    onRefreshWeather: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val scrollState = rememberScrollState()
-
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(DarkBackground)
-            .verticalScroll(scrollState)
-            .padding(16.dp),
+        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // App Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(
-                    text = "SOLAR ROBO",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Black,
-                    color = SolarAmber,
-                    letterSpacing = 1.sp
-                )
-                Text(
-                    text = "Dual-Axis Robotic Tracking Platform",
-                    fontSize = 12.sp,
-                    color = TextSecondary
-                )
-            }
-            StatusBadge(
-                text = state.connectionText,
-                isActive = state.isConnected,
-                activeColor = SolarEmerald,
-                inactiveColor = SolarRose
-            )
-        }
-
-        // Live Telemetry Grid
-        SolarCard {
-            Text(
-                text = "Live Telemetry & Diagnostics",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = TextSecondary,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                MetricItem(
-                    label = "Mode",
-                    value = state.mode.name,
-                    valueColor = when (state.mode) {
-                        RoboMode.NORMAL -> SolarEmerald
-                        RoboMode.FAULT -> SolarRose
-                        RoboMode.PROTECTING, RoboMode.SAFE -> SolarSky
-                        else -> SolarAmber
-                    },
-                    leadingIcon = {
-                        Icon(Icons.Default.Speed, contentDescription = null, tint = SolarSky)
-                    }
-                )
-                MetricItem(
-                    label = "Panel Angle",
-                    value = "${state.panelAngleDeg.toInt()}°",
-                    unit = "Tilt",
-                    valueColor = SolarAmber,
-                    leadingIcon = {
-                        Icon(Icons.Default.WbSunny, contentDescription = null, tint = SolarAmber)
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                MetricItem(
-                    label = "Solar Generation",
-                    value = "${state.generationWatts.toInt()}",
-                    unit = "Watts",
-                    valueColor = SolarEmerald,
-                    leadingIcon = {
-                        Icon(Icons.Default.WbSunny, contentDescription = null, tint = SolarEmerald)
-                    }
-                )
-                MetricItem(
-                    label = "Battery Reserve",
-                    value = "${state.batteryPercent.toInt()}%",
-                    unit = "SoC",
-                    valueColor = if (state.batteryPercent > 20f) SolarSky else SolarRose,
-                    leadingIcon = {
-                        Icon(Icons.Default.BatteryFull, contentDescription = null, tint = SolarSky)
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                MetricItem(
-                    label = "Environment",
-                    value = state.environmentText,
-                    valueColor = TextPrimary,
-                    leadingIcon = {
-                        Icon(Icons.Default.Thermostat, contentDescription = null, tint = SolarAmber)
-                    }
-                )
-                MetricItem(
-                    label = "Safety Gate",
-                    value = state.safetyLevel.name,
-                    valueColor = if (state.safetyLevel == SafetyLevel.NORMAL) SolarEmerald else SolarRose,
-                    leadingIcon = {
-                        Icon(Icons.Default.Shield, contentDescription = null, tint = SolarEmerald)
-                    }
-                )
+        Text("Solar Robo", style = MaterialTheme.typography.headlineMedium, color = SolarAmber)
+        Text("Sensorless single-axis tracker", style = MaterialTheme.typography.titleMedium)
+        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+            Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(if (state.isConnected) "Tracker connected" else "Tracker not connected", style = MaterialTheme.typography.titleLarge)
+                Text(state.connectionText, style = MaterialTheme.typography.bodyMedium)
+                Text("Connect to the ESP32 Wi-Fi and complete setup before enabling tracking.")
+                Button(onClick = onNavigateToOnboarding) { Text("Set up tracker") }
             }
         }
-
-        // AI Assistant Speech Bubble
-        SolarCard {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Robo Talk (AI Engine Summary)",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = SolarSky
-                )
-                IconButton(onClick = onRefreshAi) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Refresh AI", tint = TextSecondary)
+        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+            Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Default.WbSunny, contentDescription = null)
+                    Text("Tracking overview", style = MaterialTheme.typography.titleMedium)
                 }
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "“${state.latestMessage}”",
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
-                color = TextPrimary
-            )
-        }
-
-        // Primary Navigation Action Buttons
-        Text(
-            text = "Active Features",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = TextSecondary
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Button(
-                onClick = onNavigateToSimulator,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = SolarAmber,
-                    contentColor = DarkBackground
-                )
-            ) {
-                Text("Simulator", fontWeight = FontWeight.Bold)
-            }
-
-            Button(
-                onClick = onNavigateToCamera,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = SolarSky,
-                    contentColor = DarkBackground
-                )
-            ) {
-                Text("Camera", fontWeight = FontWeight.Bold)
-            }
-
-            Button(
-                onClick = onNavigateToOnboarding,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = DarkBorder,
-                    contentColor = TextPrimary
-                )
-            ) {
-                Text("Onboarding", fontWeight = FontWeight.Bold)
+                Text("Panel angle: ${state.panelAngleDeg?.let { "%.1f° (estimated)".format(it) } ?: "Not measured"}")
+                Text("Power output: ${state.generationWatts?.let { "%.0f W (estimate)".format(it) } ?: "Not measured"}")
+                Text("Battery: ${state.batteryPercent?.let { "%.0f%%".format(it) } ?: "Not measured"}")
+                Text("Environment: ${state.environmentText}")
+                Text("No electrical or physical weather sensors are configured. Camera observations are estimates—not measured weather or power.", style = MaterialTheme.typography.bodySmall)
             }
         }
-
-        // Planned Architectural Modules
-        Text(
-            text = "Planned Feature Routes (Build Order)",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = TextMuted
-        )
-
-        val plannedModules = listOf(
-            "energy" to "Energy Center",
-            "control" to "Tracker Control",
-            "safety" to "Safety & Emergency Gate",
-            "environment" to "Environment Array",
-            "activity" to "Activity Ledger",
-            "health" to "Subsystem Diagnostics",
-            "analytics" to "Yield Analytics",
-            "notifications" to "Alert Notifications",
-            "settings" to "Settings & DataStore"
-        )
-
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            plannedModules.chunked(2).forEach { row ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    row.forEach { (route, title) ->
-                        OutlinedButton(
-                            onClick = { onNavigateToRoute(route) },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(title, fontSize = 12.sp, maxLines = 1)
-                        }
-                    }
-                    if (row.size == 1) {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
-                }
+        WeatherAdvisoryCard(weather, onRefreshWeather)
+        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+            Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Offline assistant", style = MaterialTheme.typography.titleMedium)
+                Text(state.latestMessage)
+                OutlinedButton(onClick = onRefreshAi) { Text("Refresh guidance") }
+                OutlinedButton(onClick = { onNavigateToRoute("talk") }) { Text("Talk to Robo") }
             }
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = onNavigateToCamera, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Default.CameraAlt, contentDescription = null)
+                Spacer(Modifier.height(0.dp)); Text(" Camera")
+            }
+            OutlinedButton(onClick = { onNavigateToRoute("settings") }, modifier = Modifier.weight(1f)) {
+                Icon(Icons.Default.Settings, contentDescription = null)
+                Text(" Settings")
+            }
+        }
+        OutlinedButton(onClick = onNavigateToSimulator, modifier = Modifier.fillMaxWidth()) { Text("Open simulator (simulated values)") }
+    }
+}
+
+@Composable
+private fun WeatherAdvisoryCard(weather: WeatherUiState, onRefresh: () -> Unit) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+        Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Weather intelligence · advisory only", style = MaterialTheme.typography.titleMedium)
+            Text("Model: ${weather.modelStatus}")
+            Text("Camera: ${weather.cameraStatus}")
+            val prediction = weather.prediction
+            Text("Sky class: ${prediction?.label?.replace('_', ' ') ?: "Not available"}")
+            Text("CNN confidence: ${prediction?.let { "%.1f%%".format(it.confidence * 100) + if (it.accepted) " · accepted" else " · LOW CONFIDENCE" } ?: "Not available"}")
+            val visualRisk = when {
+                prediction == null || !prediction.accepted -> "Unknown · low confidence or no image"
+                prediction.label == "cumulonimbus_or_storm_like" -> "Storm-like visual indicator · %.0f%% confidence; not a verified storm".format(prediction.confidence * 100)
+                prediction.label in listOf("towering_cumulus", "fog_or_obscured_sky", "rain_or_precipitation", "overcast_or_stratus") -> "Potential weather concern · %.0f%% model confidence".format(prediction.confidence * 100)
+                else -> "No storm-like class detected · not a safety clearance"
+            }
+            Text("Visual risk: $visualRisk")
+            Text("Short-term obstruction: ${weather.obstructionEstimate}")
+            val flow = weather.opticalFlow
+            val motionText = if (flow?.dxPixelsPerSecond != null && flow.dyPixelsPerSecond != null) {
+                "dx %+.1f, dy %+.1f px/s · %d patches · %.0f%% match confidence".format(
+                    flow.dxPixelsPerSecond, flow.dyPixelsPerSecond, flow.matchedPatches, (flow.confidence ?: 0.0) * 100
+                )
+            } else "Not available"
+            Text("Apparent sky motion: $motionText. Camera image drift only; not wind speed.")
+            Text("Sky brightness: ${weather.brightness?.let { "%.1f/255 · image heuristic".format(it) } ?: "Not available"}; white fraction: ${weather.whiteFraction?.let { "%.2f · image statistic".format(it) } ?: "Not available"}")
+            Text("Forecast: ${weather.forecastStatusText}")
+            Text("Forecast location: ${weather.locationText}")
+            Text("Combined advisory: ${weather.recommendation.risk} · ${when (weather.recommendation.action) {
+                AdvisoryAction.CONSIDER_PROTECTIVE_STOW -> "Consider manual protective-stow review"
+                AdvisoryAction.REVIEW -> "Review conditions"
+                AdvisoryAction.CONTINUE_TRACKING -> "No elevated advisory"
+            }}")
+            weather.recommendation.reasons.forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
+            Text("Climatology: ${weather.climatologyText}")
+            Text("Verified local outcomes: ${weather.learning.verifiedCount}/${weather.learning.requiredMinimum}; local learning is ${if (weather.learning.sufficient) "eligible" else "insufficient"}.")
+            weather.error?.let { Text("Status: $it", color = MaterialTheme.colorScheme.error) }
+            Button(onClick = onRefresh, enabled = !weather.isRefreshing) { Text(if (weather.isRefreshing) "Refreshing…" else "Refresh forecast") }
+            Text("Open-Meteo forecast attribution · CC BY 4.0. Its issue time is unavailable; retrieval time is a proxy. CNN output and pixel statistics are local image estimates, not measured rain, wind, irradiance, or verified storm probabilities. Weather intelligence never moves motors. Verify hardware position, limits, and stow direction.", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 private fun HomeScreenPreview() {
     SolarRoboTheme {
         HomeScreenContent(
-            state = HomeUiState(),
-            onNavigateToSimulator = {},
-            onNavigateToCamera = {},
-            onNavigateToOnboarding = {},
-            onNavigateToRoute = {},
-            onRefreshAi = {}
+            state = HomeUiState(), weather = WeatherUiState(),
+            onNavigateToSimulator = {}, onNavigateToCamera = {}, onNavigateToOnboarding = {},
+            onNavigateToRoute = {}, onRefreshAi = {}, onRefreshWeather = {}
         )
     }
 }

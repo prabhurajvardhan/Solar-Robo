@@ -42,6 +42,8 @@ dependencies {
     implementation(project(":core:camera"))
     implementation(project(":core:common"))
     implementation(project(":core:contracts"))
+    implementation(project(":core:tracker"))
+    implementation(project(":core:weather"))
     implementation(project(":core:database"))
     implementation(project(":core:device"))
     implementation(project(":core:network"))
@@ -56,14 +58,11 @@ dependencies {
     implementation(project(":feature:simulator"))
     implementation(project(":feature:onboarding"))
     implementation(project(":feature:talk"))
-    implementation("io.github.aatricks:llmedge:0.3.9") {
-        exclude(group = "org.jetbrains.kotlin")
-    }
-
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.activity:activity-compose:1.9.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
+    implementation("androidx.lifecycle:lifecycle-service:2.8.3")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.3")
     implementation("androidx.navigation:navigation-compose:2.7.7")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")

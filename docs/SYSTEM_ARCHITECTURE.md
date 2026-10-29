@@ -1,5 +1,7 @@
 # Solar Robo — Android System Architecture Specification
 
+> **Current-design notice:** This is a legacy dual-axis/sensor-array architecture. The current sensorless, single-axis, Android-controlled Wi-Fi design is documented in [`TRACKER_ARCHITECTURE.md`](TRACKER_ARCHITECTURE.md). Do not implement Bluetooth, physical weather sensors, or fabricated power telemetry from this old specification.
+
 ## 1. Executive Summary & Core Principle
 
 **Solar Robo** is a native Android application engineered using **Kotlin** and **Jetpack Compose** for monitoring, controlling, and interacting with a dual-axis solar-tracking robotic apparatus equipped with ESP32 microcontrollers, CameraX vision feed, environmental sensor arrays, local/cloud AI reasoning, and deterministic safety mechanisms.

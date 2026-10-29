@@ -5,71 +5,48 @@ import androidx.lifecycle.viewModelScope
 import com.solarrobo.core.ai.AiEngine
 import com.solarrobo.core.ai.AiRequest
 import com.solarrobo.core.contracts.RoboMode
+import com.solarrobo.core.contracts.RoboSnapshot
 import com.solarrobo.core.contracts.SafetyLevel
-import com.solarrobo.core.simulator.SimulatorEngine
+import com.solarrobo.core.device.RoboDevice
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val simulatorEngine: SimulatorEngine,
+    private val roboDevice: RoboDevice,
     private val aiEngine: AiEngine
 ) : ViewModel() {
+    private val latestMessage = MutableStateFlow("Tracker readings are not available yet.")
 
-    private val _latestAiMessage = MutableStateFlow("Solar generation is stable.")
+    init { refreshAiSummary() }
 
-    init {
-        // Query AI engine for initial summary message
-        viewModelScope.launch {
-            val response = aiEngine.generate(AiRequest("How is the Robo?"))
-            _latestAiMessage.value = response.text
-        }
-    }
-
-    val uiState: StateFlow<HomeUiState> = combine(
-        simulatorEngine.observeRoboSnapshot(),
-        simulatorEngine.observeEnergySnapshot(),
-        simulatorEngine.observeEnvironmentSnapshot(),
-        simulatorEngine.observeSafetyEvents(),
-        _latestAiMessage
-    ) { robo, energy, env, safetyEvents, aiMsg ->
-        val latestSafety = safetyEvents.lastOrNull()?.level ?: SafetyLevel.NORMAL
-        val envDescription = when {
-            env.rainDetected -> "Rain / Protecting"
-            env.windSpeedMps > 15f -> "High Wind (${env.windSpeedMps} m/s)"
-            env.lightLux < 10000f -> "Low Light / Overcast"
-            else -> "Sunny / Normal (${env.temperatureC}°C)"
-        }
-
+    val uiState: StateFlow<HomeUiState> = combine(roboDevice.observeSnapshot(), latestMessage) { robo: RoboSnapshot, assistantMessage ->
         HomeUiState(
             isLoading = false,
             isConnected = robo.connected,
-            connectionText = if (robo.connected) "Connected / Simulator" else "Disconnected",
+            connectionText = if (robo.connected) "SolarTracker Wi-Fi connected" else "Offline · no telemetry available",
             mode = robo.mode,
-            panelAngleDeg = robo.panelAngleDeg,
-            generationWatts = energy.generatedWatts,
-            batteryPercent = energy.batteryPercent,
-            environmentText = envDescription,
-            safetyLevel = latestSafety,
-            latestMessage = aiMsg,
-            errorMessage = null
+            // Angle, output and battery are surfaced only after TrackerEngine supplies a verified estimate/source.
+            panelAngleDeg = null,
+            generationWatts = null,
+            batteryPercent = null,
+            environmentText = "Not measured",
+            safetyLevel = if (robo.mode == RoboMode.FAULT) SafetyLevel.FAULT else SafetyLevel.NORMAL,
+            latestMessage = assistantMessage
         )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = HomeUiState(isLoading = true)
-    )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState(isLoading = true))
 
     fun refreshAiSummary() {
         viewModelScope.launch {
-            val response = aiEngine.generate(AiRequest("How is the Robo?"))
-            _latestAiMessage.value = response.text
+            latestMessage.value = aiEngine.generate(
+                AiRequest("Explain safe setup for a sensorless solar tracker. Do not assume telemetry or issue motor commands.")
+            ).text
         }
     }
 }
