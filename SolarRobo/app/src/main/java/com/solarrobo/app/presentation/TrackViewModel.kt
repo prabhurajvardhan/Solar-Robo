@@ -12,10 +12,13 @@ import com.solarrobo.core.contracts.SafetyContext
 import com.solarrobo.core.contracts.SafetyDecision
 import com.solarrobo.core.contracts.SafetyGate
 import com.solarrobo.core.contracts.TrackerSnapshot
+import com.solarrobo.core.contracts.AccessMode
 import com.solarrobo.core.device.RoboDevice
+import com.solarrobo.feature.auth.domain.AuthSession
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,12 +39,14 @@ data class TrackUiState(
     val isSendingStop: Boolean = false
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class TrackViewModel @Inject constructor(
     private val roboDevice: RoboDevice,
     private val safetyGate: SafetyGate,
     private val runtimeHolder: TrackerRuntimeHolder,
-    private val cameraSource: CameraXFrameSource
+    private val cameraSource: CameraXFrameSource,
+    private val authSession: AuthSession
 ) : ViewModel() {
     private val controls = MutableStateFlow(TrackUiState())
     val uiState: StateFlow<TrackUiState> = combine(roboDevice.observeSnapshot(), controls) { snapshot, state ->
@@ -81,6 +86,7 @@ class TrackViewModel @Inject constructor(
     }
 
     fun resume() {
+        if (!isOperator()) return showOperatorRequired()
         safetyGate.resumeAfterEmergencyStop()
         controls.update { it.copy(emergencyLatched = false, message = "Safety latch cleared. A calibrated tracker may resume on its next cycle only if every link, limit, and fault interlock passes.") }
         runtimeHolder.engine.value?.let { engine ->
@@ -95,6 +101,7 @@ class TrackViewModel @Inject constructor(
     fun setHome() = withEngine("Confirm that the panel is physically flat before setting home.") { it.setHome() }
 
     fun calibrate() {
+        if (!isOperator()) return showOperatorRequired()
         val engine = runtimeHolder.engine.value
         if (engine == null) {
             controls.update { it.copy(message = "Start the tracker service and connect the ESP32 before calibration.") }
@@ -108,10 +115,17 @@ class TrackViewModel @Inject constructor(
     fun resetFault() = withEngine("Start the tracker before resetting faults.") { it.resetFault() }
 
     private fun withEngine(unavailableMessage: String, action: suspend (com.solarrobo.core.contracts.TrackerEngine) -> Unit) {
+        if (!isOperator()) return showOperatorRequired()
         val engine = runtimeHolder.engine.value
         if (engine == null) controls.update { it.copy(message = unavailableMessage) }
         else viewModelScope.launch {
             runCatching { action(engine) }.onFailure { error -> controls.update { it.copy(message = error.localizedMessage ?: "Tracker action failed") } }
         }
+    }
+
+    private fun isOperator() = authSession.accessMode.value == AccessMode.OPERATOR
+
+    private fun showOperatorRequired() {
+        controls.update { it.copy(message = "Unlock with the local PIN to use Operator controls. E-stop remains available.") }
     }
 }

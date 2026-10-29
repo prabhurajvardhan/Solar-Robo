@@ -26,6 +26,8 @@ import com.solarrobo.core.contracts.SafetyDecision
 import com.solarrobo.core.contracts.SafetyGate
 import com.solarrobo.core.contracts.TrackerFault
 import com.solarrobo.core.device.RoboDevice
+import com.solarrobo.feature.auth.domain.AuthSession
+import com.solarrobo.core.contracts.AccessMode
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
@@ -40,6 +42,7 @@ class TrackerForegroundService : LifecycleService() {
     @Inject lateinit var roboDevice: RoboDevice
     @Inject lateinit var safetyGate: SafetyGate
     @Inject lateinit var weatherRuntime: WeatherRuntime
+    @Inject lateinit var authSession: AuthSession
     private var wakeLock: PowerManager.WakeLock? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -54,6 +57,12 @@ class TrackerForegroundService : LifecycleService() {
     }
 
     private fun startTracking() {
+        if (authSession.accessMode.value != AccessMode.OPERATOR) {
+            runtimeHolder.reportError("Unlock with the local PIN before starting the tracker service.")
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return
+        }
         if (runtimeHolder.engine.value != null) return
         lifecycleScope.launch {
             try {
@@ -64,6 +73,9 @@ class TrackerForegroundService : LifecycleService() {
                 camera.start(this@TrackerForegroundService)
                 val engine = runtimeFactory.create()
                 runtimeHolder.attach(engine)
+                check(authSession.accessMode.value == AccessMode.OPERATOR) {
+                    "Operator access ended while the tracker service was starting."
+                }
                 engine.start()
                 if (engine.observeState().first().faults.contains(TrackerFault.LINK_LOST)) {
                     error("SafetyGate or ESP32 rejected tracker startup. Clear the emergency latch and verify the link, then retry.")
@@ -84,7 +96,8 @@ class TrackerForegroundService : LifecycleService() {
 
     private fun stopTracking() {
         lifecycleScope.launch {
-            safetyGate.triggerEmergencyStop()
+            // Normal Stop (including auth lock/viewer transition) stops motion without setting
+            // the persistent emergency latch; the dedicated E-stop control owns that latch.
             runCatching { runtimeHolder.engine.value?.stop() }
             val decision = safetyGate.evaluate(RoboCommand.StopMotion, SafetyContext(LinkState.OFFLINE, false, true, false, false, false))
             if (decision == SafetyDecision.Allow) runCatching { roboDevice.sendCommand(RoboCommand.StopMotion) }
@@ -126,7 +139,7 @@ class TrackerForegroundService : LifecycleService() {
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_solar_robo)
-            .setContentTitle("Solar Robo tracking")
+            .setContentTitle("ASTRA tracking")
             .setContentText("Camera-based tracker service is active")
             .setContentIntent(openIntent)
             .setOngoing(true)
