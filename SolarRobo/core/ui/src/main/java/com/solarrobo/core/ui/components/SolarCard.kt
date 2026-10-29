@@ -13,8 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.solarrobo.core.ui.theme.DarkBorder
-import com.solarrobo.core.ui.theme.DarkCard
+import com.solarrobo.core.ui.theme.Outline
+import com.solarrobo.core.ui.theme.HalfWhiteDeep
 import com.solarrobo.core.ui.theme.SolarRoboTheme
 
 @Composable
@@ -25,8 +25,8 @@ fun SolarCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = DarkCard),
-        border = BorderStroke(1.dp, DarkBorder)
+        colors = CardDefaults.cardColors(containerColor = HalfWhiteDeep),
+        border = BorderStroke(1.dp, Outline)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),

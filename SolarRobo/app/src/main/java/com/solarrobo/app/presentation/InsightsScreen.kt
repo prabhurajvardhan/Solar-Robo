@@ -18,12 +18,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.solarrobo.core.ui.theme.SunAmber
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -71,7 +71,7 @@ fun InsightsScreen(viewModel: InsightsViewModel, modifier: Modifier = Modifier) 
                         days.forEachIndexed { index, day ->
                             val barHeight = size.height * day.sampleCount / maxSamples.toFloat()
                             drawRect(
-                                color = Color(0xFFE6A11A),
+                                color = SunAmber,
                                 topLeft = Offset(index * (barWidth + gap), size.height - barHeight),
                                 size = Size(barWidth, barHeight)
                             )

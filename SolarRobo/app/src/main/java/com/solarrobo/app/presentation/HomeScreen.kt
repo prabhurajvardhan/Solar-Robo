@@ -28,7 +28,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solarrobo.app.weather.WeatherUiState
-import com.solarrobo.core.ui.theme.SolarAmber
 import com.solarrobo.core.ui.theme.SolarRoboTheme
 import com.solarrobo.core.weather.AdvisoryAction
 
@@ -73,7 +72,7 @@ fun HomeScreenContent(
         modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("Solar Robo", style = MaterialTheme.typography.headlineMedium, color = SolarAmber)
+        Text("ASTRA", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
         Text("Sensorless single-axis tracker", style = MaterialTheme.typography.titleMedium)
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
             Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -13,10 +13,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.solarrobo.core.ui.theme.SolarAmber
+import com.solarrobo.core.ui.theme.SunAmber
 import com.solarrobo.core.ui.theme.SolarRoboTheme
-import com.solarrobo.core.ui.theme.TextPrimary
-import com.solarrobo.core.ui.theme.TextSecondary
+import com.solarrobo.core.ui.theme.InkPrimary
+import com.solarrobo.core.ui.theme.InkSecondary
 
 @Composable
 fun MetricItem(
@@ -24,7 +24,7 @@ fun MetricItem(
     value: String,
     modifier: Modifier = Modifier,
     unit: String? = null,
-    valueColor: Color = TextPrimary,
+    valueColor: Color = InkPrimary,
     leadingIcon: (@Composable () -> Unit)? = null
 ) {
     Row(
@@ -39,7 +39,7 @@ fun MetricItem(
             Text(
                 text = label,
                 fontSize = 12.sp,
-                color = TextSecondary
+                color = InkSecondary
             )
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
@@ -53,7 +53,7 @@ fun MetricItem(
                     Text(
                         text = unit,
                         fontSize = 12.sp,
-                        color = TextSecondary,
+                        color = InkSecondary,
                         modifier = Modifier.alignByBaseline()
                     )
                 }
@@ -70,7 +70,7 @@ private fun MetricItemPreview() {
             label = "Generation",
             value = "342",
             unit = "Watts",
-            valueColor = SolarAmber
+            valueColor = SunAmber
         )
     }
 }

@@ -49,7 +49,7 @@ fun OnboardingScreen(
 
     Surface(modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Text("Solar Robo", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
+            Text("ASTRA", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
             Text("Sensorless single-axis solar tracker", style = MaterialTheme.typography.titleMedium)
             Text("The phone estimates the sun direction and panel angle. The ESP32 drives only the motor. Core operation uses local Wi-Fi; no internet is required.")
             if (!started) {
@@ -110,6 +110,6 @@ fun OnboardingScreen(
 @Composable
 private fun OnboardingLandingPreview() {
     SolarRoboTheme {
-        Surface { Row(Modifier.padding(16.dp)) { Text("Solar Robo setup preview") } }
+        Surface { Row(Modifier.padding(16.dp)) { Text("ASTRA setup preview") } }
     }
 }

@@ -13,17 +13,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.solarrobo.core.ui.theme.SolarEmerald
+import com.solarrobo.core.ui.theme.Olive
 import com.solarrobo.core.ui.theme.SolarRoboTheme
-import com.solarrobo.core.ui.theme.SolarRose
+import com.solarrobo.core.ui.theme.ErrorRed
 
 @Composable
 fun StatusBadge(
     text: String,
     isActive: Boolean,
     modifier: Modifier = Modifier,
-    activeColor: Color = SolarEmerald,
-    inactiveColor: Color = SolarRose
+    activeColor: Color = Olive,
+    inactiveColor: Color = ErrorRed
 ) {
     val color = if (isActive) activeColor else inactiveColor
     Box(

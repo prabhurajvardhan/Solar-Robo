@@ -22,9 +22,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.solarrobo.app.R
-import com.solarrobo.core.ui.theme.ForestInk
-import com.solarrobo.core.ui.theme.Porcelain
-import com.solarrobo.core.ui.theme.Sage
+import com.solarrobo.core.ui.theme.InkPrimary
+import com.solarrobo.core.ui.theme.HalfWhite
+import com.solarrobo.core.ui.theme.OliveMutedTint
 import kotlin.math.roundToInt
 
 @Composable
@@ -54,8 +54,8 @@ fun MascotOverlay(route: String?, modifier: Modifier = Modifier) {
         }
     }, contentAlignment = Alignment.BottomEnd) {
         Column(horizontalAlignment = Alignment.End) {
-            Text(expression, color = ForestInk, style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
-                modifier = Modifier.background(Porcelain.copy(alpha = .94f), RoundedCornerShape(50)).padding(horizontal = 10.dp, vertical = 5.dp))
+            Text(expression, color = InkPrimary, style = androidx.compose.material3.MaterialTheme.typography.labelSmall,
+                modifier = Modifier.background(HalfWhite.copy(alpha = .94f), RoundedCornerShape(50)).padding(horizontal = 10.dp, vertical = 5.dp))
             Image(painterResource(R.drawable.robo_mascot), "Robo mascot — drag to move", Modifier.size(82.dp).clip(RoundedCornerShape(28.dp)), contentScale = ContentScale.Crop)
         }
     }
