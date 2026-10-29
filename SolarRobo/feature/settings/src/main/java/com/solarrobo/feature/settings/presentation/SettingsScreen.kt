@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -160,6 +162,13 @@ private fun SettingsContent(
                 enabled = isOperator
             )
             BatteryOptimizationSettings(enabled = isOperator)
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("About ASTRA", style = MaterialTheme.typography.titleMedium)
+                    Text("ASTRA v2.0.0-astra", style = MaterialTheme.typography.bodyLarge)
+                    Text("Sensorless, single-axis solar tracking · offline-first", style = MaterialTheme.typography.bodySmall)
+                }
+            }
         }
         Spacer(Modifier.height(8.dp))
         ViewerAccessTooltip(isOperator) { actionModifier ->

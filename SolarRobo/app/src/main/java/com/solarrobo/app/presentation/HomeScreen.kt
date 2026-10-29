@@ -13,10 +13,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -28,6 +29,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solarrobo.app.weather.WeatherUiState
+import com.solarrobo.core.contracts.AccessMode
+import com.solarrobo.core.ui.theme.LocalAccessMode
 import com.solarrobo.core.ui.theme.SolarRoboTheme
 import com.solarrobo.core.weather.AdvisoryAction
 
@@ -68,40 +71,71 @@ fun HomeScreenContent(
     onRefreshWeather: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val mode = LocalAccessMode.current
     Column(
-        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Text("ASTRA", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
-        Text("Sensorless single-axis tracker", style = MaterialTheme.typography.titleMedium)
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-            Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(if (state.isConnected) "Tracker connected" else "Tracker not connected", style = MaterialTheme.typography.titleLarge)
-                Text(state.connectionText, style = MaterialTheme.typography.bodyMedium)
-                Text("Connect to the ESP32 Wi-Fi and complete setup before enabling tracking.")
-                Button(onClick = onNavigateToOnboarding) { Text("Set up tracker") }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Column {
+                Text("ASTRA", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                Text("Dashboard", style = MaterialTheme.typography.headlineMedium)
             }
+            Text(if (mode == AccessMode.OPERATOR) "Operator" else "Viewer", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-            Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Icon(Icons.Default.WbSunny, contentDescription = null)
-                    Text("Tracking overview", style = MaterialTheme.typography.titleMedium)
+        if (state.isLoading) {
+            Card(Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(20.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    CircularProgressIndicator()
+                    Text("Loading local tracker state…", modifier = Modifier.padding(top = 8.dp))
                 }
-                Text("Panel angle: ${state.panelAngleDeg?.let { "%.1f° (estimated)".format(it) } ?: "Not measured"}")
-                Text("Power output: ${state.generationWatts?.let { "%.0f W (estimate)".format(it) } ?: "Not measured"}")
-                Text("Battery: ${state.batteryPercent?.let { "%.0f%%".format(it) } ?: "Not measured"}")
-                Text("Environment: ${state.environmentText}")
-                Text("No electrical or physical weather sensors are configured. Camera observations are estimates—not measured weather or power.", style = MaterialTheme.typography.bodySmall)
             }
+        } else {
+            ConnectionCard(state, onNavigateToOnboarding)
+            if (!state.isConnected && state.panelAngleDeg == null) {
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+                    Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("No live tracker data yet", style = MaterialTheme.typography.titleMedium)
+                        Text("Connect the ESP32 access point, set the tracker location, then calibrate. Unmeasured electrical and weather values stay marked as Not measured.", style = MaterialTheme.typography.bodyMedium)
+                        Button(onClick = onNavigateToOnboarding) { Text("Set up tracker") }
+                    }
+                }
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                DashboardMetricCard(
+                    title = "Panel angle",
+                    value = state.panelAngleDeg?.let { "%.1f°".format(it) } ?: "Not measured",
+                    note = if (state.panelAngleDeg == null) "Camera estimate unavailable" else "Camera-derived estimate · no encoder"
+                , modifier = Modifier.weight(1f))
+                DashboardMetricCard(
+                    title = "Solar target",
+                    value = state.targetAngleDeg?.let { "%.1f°".format(it) } ?: "Not available",
+                    note = "Calculated single-axis angle"
+                , modifier = Modifier.weight(1f))
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                DashboardMetricCard(title = "Power", value = "Not measured", note = "No electrical meter", modifier = Modifier.weight(1f))
+                DashboardMetricCard(title = "Battery", value = "Not measured", note = "No battery telemetry", modifier = Modifier.weight(1f))
+            }
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Tracker status", style = MaterialTheme.typography.titleMedium)
+                    Text("Link: ${if (state.isConnected) "Connected" else "Offline"}")
+                    Text("Calibration: ${when (state.isCalibrated) { true -> "Complete"; false -> "Required"; null -> "Not available" }}")
+                    Text("Sun azimuth: ${state.sunAzimuthDeg?.let { "%.1f° · calculated".format(it) } ?: "Not available"}")
+                    Text("Sun elevation: ${state.sunElevationDeg?.let { "%.1f° · calculated".format(it) } ?: "Not available"}")
+                    Text("Environment: ${state.environmentText}")
+                }
+            }
+            HistoryCard(state)
         }
         WeatherAdvisoryCard(weather, onRefreshWeather)
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-            Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Offline assistant", style = MaterialTheme.typography.titleMedium)
+            Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Offline guidance", style = MaterialTheme.typography.titleMedium)
                 Text(state.latestMessage)
                 OutlinedButton(onClick = onRefreshAi) { Text("Refresh guidance") }
-                OutlinedButton(onClick = { onNavigateToRoute("talk") }) { Text("Talk to Robo") }
+                OutlinedButton(onClick = { onNavigateToRoute("talk") }) { Text("Talk to ASTRA") }
             }
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -114,61 +148,104 @@ fun HomeScreenContent(
                 Text(" Settings")
             }
         }
-        OutlinedButton(onClick = onNavigateToSimulator, modifier = Modifier.fillMaxWidth()) { Text("Open simulator (simulated values)") }
+        OutlinedButton(onClick = { onNavigateToRoute("track") }, modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Default.TrackChanges, contentDescription = null)
+            Text(" Open tracker controls")
+        }
+        OutlinedButton(onClick = onNavigateToSimulator, modifier = Modifier.fillMaxWidth()) { Text("Open simulator · simulated values") }
+        Text("ASTRA v2.0.0-astra · values are local, calculated, camera-estimated, or explicitly Not measured.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun ConnectionCard(state: HomeUiState, onSetup: () -> Unit) {
+    Card(colors = CardDefaults.cardColors(containerColor = if (state.isConnected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant)) {
+        Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(if (state.isConnected) "Controller connected" else "Controller not connected", style = MaterialTheme.typography.titleLarge)
+            Text(state.connectionText)
+            Text("Single-axis tracking · local Wi-Fi · sensorless position estimate", style = MaterialTheme.typography.bodySmall)
+            if (!state.isConnected) Button(onClick = onSetup) { Text("Set up tracker") }
+        }
+    }
+}
+
+@Composable
+private fun DashboardMetricCard(title: String, value: String, note: String, modifier: Modifier = Modifier) {
+    Card(modifier, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, style = MaterialTheme.typography.titleLarge)
+            Text(note, style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+@Composable
+private fun HistoryCard(state: HomeUiState) {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+        Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("Recent local tracking history", style = MaterialTheme.typography.titleMedium)
+            val count = state.todayTrackingCycles
+            if (count == null || count == 0) {
+                Text("No tracking samples found in the most recent 2,000 log rows for today (UTC).")
+            } else {
+                Text("Samples in most recent 2,000 rows today (UTC): $count")
+                Text("Sun detected: ${state.todaySunFoundCount ?: 0} of these samples · camera classification")
+                Text("Mean image jitter: ${state.todayMeanJitterPx?.let { "%.2f px · image statistic".format(it) } ?: "Not available"}")
+            }
+        }
     }
 }
 
 @Composable
 private fun WeatherAdvisoryCard(weather: WeatherUiState, onRefresh: () -> Unit) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-        Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
             Text("Weather intelligence · advisory only", style = MaterialTheme.typography.titleMedium)
-            Text("Model: ${weather.modelStatus}")
-            Text("Camera: ${weather.cameraStatus}")
+            Text("Camera: ${weather.cameraStatus} · Model: ${weather.modelStatus}")
             val prediction = weather.prediction
             Text("Sky class: ${prediction?.label?.replace('_', ' ') ?: "Not available"}")
-            Text("CNN confidence: ${prediction?.let { "%.1f%%".format(it.confidence * 100) + if (it.accepted) " · accepted" else " · LOW CONFIDENCE" } ?: "Not available"}")
+            Text("CNN confidence: ${prediction?.let { "%.1f%%".format(it.confidence * 100) + if (it.accepted) " · accepted" else " · low confidence" } ?: "Not available"}")
             val visualRisk = when {
                 prediction == null || !prediction.accepted -> "Unknown · low confidence or no image"
-                prediction.label == "cumulonimbus_or_storm_like" -> "Storm-like visual indicator · %.0f%% confidence; not a verified storm".format(prediction.confidence * 100)
-                prediction.label in listOf("towering_cumulus", "fog_or_obscured_sky", "rain_or_precipitation", "overcast_or_stratus") -> "Potential weather concern · %.0f%% model confidence".format(prediction.confidence * 100)
+                prediction.label == "cumulonimbus_or_storm_like" -> "Storm-like visual indicator · not a verified storm"
+                prediction.label in listOf("towering_cumulus", "fog_or_obscured_sky", "rain_or_precipitation", "overcast_or_stratus") -> "Potential visual weather concern · not a safety measurement"
                 else -> "No storm-like class detected · not a safety clearance"
             }
-            Text("Visual risk: $visualRisk")
-            Text("Short-term obstruction: ${weather.obstructionEstimate}")
-            val flow = weather.opticalFlow
-            val motionText = if (flow?.dxPixelsPerSecond != null && flow.dyPixelsPerSecond != null) {
-                "dx %+.1f, dy %+.1f px/s · %d patches · %.0f%% match confidence".format(
-                    flow.dxPixelsPerSecond, flow.dyPixelsPerSecond, flow.matchedPatches, (flow.confidence ?: 0.0) * 100
-                )
-            } else "Not available"
-            Text("Apparent sky motion: $motionText. Camera image drift only; not wind speed.")
-            Text("Sky brightness: ${weather.brightness?.let { "%.1f/255 · image heuristic".format(it) } ?: "Not available"}; white fraction: ${weather.whiteFraction?.let { "%.2f · image statistic".format(it) } ?: "Not available"}")
+            Text("Visual advisory: $visualRisk")
+            Text("Apparent sky motion: ${weather.opticalFlow?.let { "dx %+.1f, dy %+.1f px/s".format(it.dxPixelsPerSecond ?: 0.0, it.dyPixelsPerSecond ?: 0.0) } ?: "Not available"} · image drift, not wind speed")
             Text("Forecast: ${weather.forecastStatusText}")
             Text("Forecast location: ${weather.locationText}")
             Text("Combined advisory: ${weather.recommendation.risk} · ${when (weather.recommendation.action) {
-                AdvisoryAction.CONSIDER_PROTECTIVE_STOW -> "Consider manual protective-stow review"
+                AdvisoryAction.CONSIDER_PROTECTIVE_STOW -> "Review manual protective-stow conditions"
                 AdvisoryAction.REVIEW -> "Review conditions"
                 AdvisoryAction.CONTINUE_TRACKING -> "No elevated advisory"
             }}")
             weather.recommendation.reasons.forEach { Text("• $it", style = MaterialTheme.typography.bodySmall) }
             Text("Climatology: ${weather.climatologyText}")
-            Text("Verified local outcomes: ${weather.learning.verifiedCount}/${weather.learning.requiredMinimum}; local learning is ${if (weather.learning.sufficient) "eligible" else "insufficient"}.")
+            Text("Verified local outcomes: ${weather.learning.verifiedCount}/${weather.learning.requiredMinimum}; learning ${if (weather.learning.sufficient) "eligible" else "insufficient"}.")
             weather.error?.let { Text("Status: $it", color = MaterialTheme.colorScheme.error) }
             Button(onClick = onRefresh, enabled = !weather.isRefreshing) { Text(if (weather.isRefreshing) "Refreshing…" else "Refresh forecast") }
-            Text("Open-Meteo forecast attribution · CC BY 4.0. Its issue time is unavailable; retrieval time is a proxy. CNN output and pixel statistics are local image estimates, not measured rain, wind, irradiance, or verified storm probabilities. Weather intelligence never moves motors. Verify hardware position, limits, and stow direction.", style = MaterialTheme.typography.bodySmall)
+            Text("Open-Meteo attribution · CC BY 4.0. Retrieval time is used as a proxy because issue time is unavailable. CNN and pixel statistics are local image estimates, not measured rain, wind, irradiance, or verified storm probabilities. Weather intelligence never moves motors.", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Dashboard · empty · light")
 @Composable
-private fun HomeScreenPreview() {
+private fun HomeScreenEmptyPreview() {
+    SolarRoboTheme {
+        HomeScreenContent(HomeUiState(), WeatherUiState(), {}, {}, {}, {}, {}, {})
+    }
+}
+
+@Preview(showBackground = true, name = "Dashboard · populated · light")
+@Composable
+private fun HomeScreenPopulatedPreview() {
     SolarRoboTheme {
         HomeScreenContent(
-            state = HomeUiState(), weather = WeatherUiState(),
-            onNavigateToSimulator = {}, onNavigateToCamera = {}, onNavigateToOnboarding = {},
-            onNavigateToRoute = {}, onRefreshAi = {}, onRefreshWeather = {}
+            HomeUiState(isConnected = true, panelAngleDeg = 22.5f, targetAngleDeg = 24f, sunAzimuthDeg = 190f, sunElevationDeg = 38f, isCalibrated = true, todayTrackingCycles = 42, todaySunFoundCount = 34, todayMeanJitterPx = 1.7f),
+            WeatherUiState(), {}, {}, {}, {}, {}, {}
         )
     }
 }

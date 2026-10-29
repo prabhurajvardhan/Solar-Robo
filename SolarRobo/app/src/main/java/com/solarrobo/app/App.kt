@@ -58,7 +58,7 @@ private fun MainSolarRoboContent() {
     hiltViewModel<SettingsViewModel>()
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val destinations = listOf(
-        Triple(Screen.Home, "Today", Icons.Default.Home),
+        Triple(Screen.Home, "Dashboard", Icons.Default.Home),
         Triple(Screen.Control, "Track", Icons.Default.TrackChanges),
         Triple(Screen.Analytics, "Insights", Icons.Default.Insights),
         Triple(Screen.Settings, "Settings", Icons.Default.Settings)
