@@ -6,7 +6,7 @@ import com.solarrobo.core.common.DefaultAppDispatchers
 import com.solarrobo.core.common.SystemTimeProvider
 import com.solarrobo.core.common.TimeProvider
 import com.solarrobo.core.database.DatabaseProvider
-import com.solarrobo.core.database.InMemoryDatabaseProvider
+import com.solarrobo.core.database.RoomDatabaseProvider
 import android.content.Context
 import com.solarrobo.core.device.Esp32WifiDevice
 import com.solarrobo.core.device.RoboDevice
@@ -17,6 +17,7 @@ import com.solarrobo.core.simulator.SimulatorEngine
 import com.solarrobo.core.simulator.SimulatorEngineImpl
 import com.solarrobo.core.contracts.SafetyGate
 import com.solarrobo.core.contracts.SafetyLatchStore
+import com.solarrobo.feature.auth.domain.AuthSession
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -46,7 +47,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideTrackerSafety(gate: SafetyGate): TrackerSafety = SafetyGateTrackerSafety(gate)
+    fun provideTrackerSafety(gate: SafetyGate, authSession: AuthSession): TrackerSafety =
+        SafetyGateTrackerSafety(gate, authSession)
 
     @Provides
     @Singleton
@@ -77,6 +79,6 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideDatabaseProvider(): DatabaseProvider = InMemoryDatabaseProvider()
+    fun provideDatabaseProvider(room: RoomDatabaseProvider): DatabaseProvider = room
 
 }

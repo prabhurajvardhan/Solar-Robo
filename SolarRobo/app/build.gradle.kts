@@ -58,6 +58,7 @@ dependencies {
     implementation(project(":feature:simulator"))
     implementation(project(":feature:onboarding"))
     implementation(project(":feature:talk"))
+    implementation(project(":feature:auth"))
     implementation(platform("androidx.compose:compose-bom:2024.06.00"))
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.activity:activity-compose:1.9.0")

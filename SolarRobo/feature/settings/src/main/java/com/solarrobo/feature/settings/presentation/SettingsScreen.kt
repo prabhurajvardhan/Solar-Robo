@@ -45,10 +45,14 @@ import com.solarrobo.feature.settings.components.NotificationSettings
 import com.solarrobo.feature.settings.components.VoiceSettings
 import com.solarrobo.feature.settings.domain.SettingsPatch
 import com.solarrobo.feature.settings.domain.UserSettings
+import com.solarrobo.core.contracts.AccessMode
+import com.solarrobo.core.ui.theme.LocalAccessMode
+import com.solarrobo.core.ui.components.ViewerAccessTooltip
 
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
+    onNavigateToSecurity: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -57,6 +61,7 @@ fun SettingsScreen(
         onUpdate = viewModel::update,
         onReset = viewModel::reset,
         onRetry = viewModel::retry,
+        onSecurity = onNavigateToSecurity,
         modifier = modifier
     )
 }
@@ -68,8 +73,10 @@ fun SettingsScreenContent(
     onUpdate: (SettingsPatch) -> Unit,
     onReset: () -> Unit,
     onRetry: () -> Unit,
+    onSecurity: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val isOperator = LocalAccessMode.current == AccessMode.OPERATOR
     Scaffold(
         topBar = { TopAppBar(title = { Text("Settings & Preferences") }) },
         modifier = modifier
@@ -86,6 +93,8 @@ fun SettingsScreenContent(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (!isOperator) Text("Viewer mode · settings are read-only until Operator unlock.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedButton(onClick = onSecurity, modifier = Modifier.fillMaxWidth()) { Text("Security & access") }
             state.errorMessage?.let { message ->
                 Text(message, color = MaterialTheme.colorScheme.error)
                 Button(onClick = onRetry) {
@@ -99,7 +108,8 @@ fun SettingsScreenContent(
                 else -> SettingsContent(
                     settings = state.settings,
                     onUpdate = onUpdate,
-                    onReset = onReset
+                    onReset = onReset,
+                    isOperator = isOperator
                 )
             }
         }
@@ -110,7 +120,8 @@ fun SettingsScreenContent(
 private fun SettingsContent(
     settings: UserSettings,
     onUpdate: (SettingsPatch) -> Unit,
-    onReset: () -> Unit
+    onReset: () -> Unit,
+    isOperator: Boolean
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -125,7 +136,8 @@ private fun SettingsContent(
                 onDarkThemeToggle = { onUpdate(SettingsPatch(darkTheme = it)) },
                 onTemperatureUnitToggle = {
                     onUpdate(SettingsPatch(temperatureUnitCelsius = it))
-                }
+                },
+                enabled = isOperator
             )
             NotificationSettings(
                 enabled = settings.notificationsEnabled,
@@ -133,25 +145,31 @@ private fun SettingsContent(
                 onToggle = { onUpdate(SettingsPatch(notificationsEnabled = it)) },
                 onHighWindAlertsToggle = {
                     onUpdate(SettingsPatch(highWindAlertsEnabled = it))
-                }
+                },
+                controlsEnabled = isOperator
             )
             VoiceSettings(
                 enabled = settings.voiceFeedbackEnabled,
-                onToggle = { onUpdate(SettingsPatch(voiceFeedbackEnabled = it)) }
+                onToggle = { onUpdate(SettingsPatch(voiceFeedbackEnabled = it)) },
+                controlsEnabled = isOperator
             )
             TrackerLocationSettings(
                 latitudeDeg = settings.latitudeDeg,
                 longitudeDeg = settings.longitudeDeg,
-                onSave = { latitude, longitude -> onUpdate(SettingsPatch(latitudeDeg = latitude, longitudeDeg = longitude)) }
+                onSave = { latitude, longitude -> onUpdate(SettingsPatch(latitudeDeg = latitude, longitudeDeg = longitude)) },
+                enabled = isOperator
             )
-            BatteryOptimizationSettings()
+            BatteryOptimizationSettings(enabled = isOperator)
         }
         Spacer(Modifier.height(8.dp))
-        OutlinedButton(
-            onClick = onReset,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Restore defaults")
+        ViewerAccessTooltip(isOperator) { actionModifier ->
+            OutlinedButton(
+                onClick = onReset,
+                enabled = isOperator,
+                modifier = actionModifier.fillMaxWidth()
+            ) {
+                Text("Restore defaults")
+            }
         }
     }
 }
@@ -160,7 +178,8 @@ private fun SettingsContent(
 private fun TrackerLocationSettings(
     latitudeDeg: Double?,
     longitudeDeg: Double?,
-    onSave: (Double, Double) -> Unit
+    onSave: (Double, Double) -> Unit,
+    enabled: Boolean
 ) {
     var latitude by remember(latitudeDeg) { mutableStateOf(latitudeDeg?.toString().orEmpty()) }
     var longitude by remember(longitudeDeg) { mutableStateOf(longitudeDeg?.toString().orEmpty()) }
@@ -168,10 +187,10 @@ private fun TrackerLocationSettings(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Tracker location", style = MaterialTheme.typography.titleMedium)
         Text("Used for the sun-position calculation; coordinates stay on this device.", style = MaterialTheme.typography.bodySmall)
-        OutlinedTextField(latitude, { latitude = it }, label = { Text("Latitude (−90 to 90)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(longitude, { longitude = it }, label = { Text("Longitude (−180 to 180)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(latitude, { latitude = it }, enabled = enabled, label = { Text("Latitude (−90 to 90)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(longitude, { longitude = it }, enabled = enabled, label = { Text("Longitude (−180 to 180)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth())
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        Button(onClick = {
+        ViewerAccessTooltip(enabled) { actionModifier -> Button(onClick = {
             val lat = latitude.toDoubleOrNull()
             val lon = longitude.toDoubleOrNull()
             error = when {
@@ -180,12 +199,12 @@ private fun TrackerLocationSettings(
                 else -> null
             }
             if (error == null) onSave(lat!!, lon!!)
-        }, modifier = Modifier.fillMaxWidth()) { Text("Save tracker location") }
+        }, enabled = enabled, modifier = actionModifier.fillMaxWidth()) { Text("Save tracker location") } }
     }
 }
 
 @Composable
-private fun BatteryOptimizationSettings() {
+private fun BatteryOptimizationSettings(enabled: Boolean) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var exempt by remember { mutableStateOf(false) }
@@ -207,14 +226,14 @@ private fun BatteryOptimizationSettings() {
             style = MaterialTheme.typography.bodySmall
         )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !exempt) {
-            OutlinedButton(onClick = {
+            ViewerAccessTooltip(enabled) { actionModifier -> OutlinedButton(onClick = {
                 val request = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                     data = Uri.parse("package:${context.packageName}")
                 }
                 runCatching { context.startActivity(request) }.onFailure {
                     context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
                 }
-            }, modifier = Modifier.fillMaxWidth()) { Text("Review battery-optimization setting") }
+            }, enabled = enabled, modifier = actionModifier.fillMaxWidth()) { Text("Review battery-optimization setting") } }
         }
     }
 }

@@ -35,6 +35,7 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:contracts"))
     implementation(project(":core:storage"))
+    implementation(project(":core:ui"))
     implementation(platform("androidx.compose:compose-bom:2024.04.01"))
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")

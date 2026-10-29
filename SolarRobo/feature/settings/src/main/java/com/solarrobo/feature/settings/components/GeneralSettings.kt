@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import com.solarrobo.core.ui.components.ViewerAccessTooltip
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,6 +22,7 @@ fun GeneralSettings(
     temperatureUnitCelsius: Boolean,
     onDarkThemeToggle: (Boolean) -> Unit,
     onTemperatureUnitToggle: (Boolean) -> Unit,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     SettingsCard(title = "General", modifier = modifier) {
@@ -28,13 +30,15 @@ fun GeneralSettings(
             title = "Dark theme",
             description = "Use a dark appearance",
             checked = darkTheme,
-            onCheckedChange = onDarkThemeToggle
+            onCheckedChange = onDarkThemeToggle,
+            enabled = enabled
         )
         PreferenceSwitchRow(
             title = "Temperature in Celsius",
             description = "Turn off to display Fahrenheit",
             checked = temperatureUnitCelsius,
-            onCheckedChange = onTemperatureUnitToggle
+            onCheckedChange = onTemperatureUnitToggle,
+            enabled = enabled
         )
     }
 }
@@ -44,7 +48,8 @@ private fun PreferenceSwitchRow(
     title: String,
     description: String,
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean
 ) {
     Row(
         modifier = Modifier
@@ -57,11 +62,14 @@ private fun PreferenceSwitchRow(
             Text(title, style = MaterialTheme.typography.bodyLarge)
             Text(description, style = MaterialTheme.typography.bodySmall)
         }
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            modifier = Modifier.semantics { contentDescription = title }
-        )
+        ViewerAccessTooltip(enabled) { tooltipModifier ->
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                enabled = enabled,
+                modifier = tooltipModifier.semantics { contentDescription = title }
+            )
+        }
     }
 }
 

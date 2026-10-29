@@ -40,6 +40,7 @@ include(":feature:notifications")
 include(":feature:settings")
 include(":feature:home")
 include(":feature:energy")
+include(":feature:auth")
 
 // Feature Modules (Planned - Unbuilt)
 // include(":feature:control")

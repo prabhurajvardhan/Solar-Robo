@@ -27,6 +27,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:contracts"))
     implementation(platform(libs.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)

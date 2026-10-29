@@ -10,6 +10,8 @@ import com.solarrobo.app.presentation.HomeScreen
 import com.solarrobo.app.presentation.InsightsScreen
 import com.solarrobo.app.presentation.TrackScreen
 import com.solarrobo.app.presentation.WeatherViewModel
+import com.solarrobo.feature.auth.presentation.AuthViewModel
+import com.solarrobo.feature.auth.presentation.SecuritySettingsScreen
 import com.solarrobo.feature.camera.presentation.CameraScreen
 import com.solarrobo.feature.notifications.presentation.NotificationsScreen
 import com.solarrobo.feature.onboarding.presentation.OnboardingScreen
@@ -23,6 +25,7 @@ sealed class Screen(val route: String) {
     data object Control : Screen("track")
     data object Analytics : Screen("insights")
     data object Settings : Screen("settings")
+    data object Security : Screen("security")
     data object Camera : Screen("camera")
     data object Notifications : Screen("notifications")
     data object Simulator : Screen("simulator")
@@ -50,7 +53,13 @@ fun AppNavHost(
             TrackScreen(viewModel = hiltViewModel(), onSetup = { navController.navigate(Screen.Onboarding.route) })
         }
         composable(Screen.Analytics.route) { InsightsScreen(viewModel = hiltViewModel()) }
-        composable(Screen.Settings.route) { SettingsScreen(viewModel = hiltViewModel()) }
+        composable(Screen.Settings.route) {
+            SettingsScreen(viewModel = hiltViewModel(), onNavigateToSecurity = { navController.navigate(Screen.Security.route) })
+        }
+        composable(Screen.Security.route) {
+            val authViewModel: AuthViewModel = hiltViewModel()
+            SecuritySettingsScreen(authViewModel, onLockNow = authViewModel::lockNow)
+        }
         composable(Screen.Camera.route) { CameraScreen(viewModel = hiltViewModel()) }
         composable(Screen.Notifications.route) { NotificationsScreen(viewModel = hiltViewModel()) }
         composable(Screen.Simulator.route) { SimulatorScreen(viewModel = hiltViewModel()) }
