@@ -23,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -161,6 +162,11 @@ private fun SettingsContent(
                 onSave = { latitude, longitude -> onUpdate(SettingsPatch(latitudeDeg = latitude, longitudeDeg = longitude)) },
                 enabled = isOperator
             )
+            TravelLimitSettings(
+                travelLimitDeg = settings.travelLimitDeg,
+                onSave = { onUpdate(SettingsPatch(travelLimitDeg = it)) },
+                enabled = isOperator
+            )
             BatteryOptimizationSettings(enabled = isOperator)
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -209,6 +215,25 @@ private fun TrackerLocationSettings(
             }
             if (error == null) onSave(lat!!, lon!!)
         }, enabled = enabled, modifier = actionModifier.fillMaxWidth()) { Text("Save tracker location") } }
+    }
+}
+
+@Composable
+private fun TravelLimitSettings(
+    travelLimitDeg: Float,
+    onSave: (Float) -> Unit,
+    enabled: Boolean
+) {
+    var selectedLimit by remember(travelLimitDeg) { mutableStateOf(travelLimitDeg) }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Travel limit", style = MaterialTheme.typography.titleMedium)
+        Text("Symmetric limit from flat: ±${selectedLimit.toInt()}°. Never exceeds the mechanical ±70° ceiling. The value is applied when the tracker service starts.", style = MaterialTheme.typography.bodySmall)
+        Slider(value = selectedLimit, onValueChange = { selectedLimit = it }, valueRange = 1f..70f, steps = 68, enabled = enabled)
+        ViewerAccessTooltip(enabled) { actionModifier ->
+            Button(onClick = { onSave(selectedLimit) }, enabled = enabled, modifier = actionModifier.fillMaxWidth()) {
+                Text("Save travel limit")
+            }
+        }
     }
 }
 

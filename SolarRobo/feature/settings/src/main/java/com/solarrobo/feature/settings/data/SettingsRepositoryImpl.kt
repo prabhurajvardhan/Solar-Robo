@@ -28,10 +28,12 @@ class SettingsRepositoryImpl @Inject constructor(
             voiceFeedbackEnabled = patch.voiceFeedbackEnabled ?: current.voiceFeedbackEnabled,
             temperatureUnitCelsius = patch.temperatureUnitCelsius ?: current.temperatureUnitCelsius,
             latitudeDeg = patch.latitudeDeg ?: current.latitudeDeg,
-            longitudeDeg = patch.longitudeDeg ?: current.longitudeDeg
+            longitudeDeg = patch.longitudeDeg ?: current.longitudeDeg,
+            travelLimitDeg = patch.travelLimitDeg ?: current.travelLimitDeg
         )
         require(next.latitudeDeg == null || next.latitudeDeg in -90.0..90.0) { "Latitude must be between -90 and 90 degrees." }
         require(next.longitudeDeg == null || next.longitudeDeg in -180.0..180.0) { "Longitude must be between -180 and 180 degrees." }
+        require(next.travelLimitDeg.isFinite() && next.travelLimitDeg in 1f..70f) { "Travel limit must be between 1 and 70 degrees." }
         next.toPreferences()
     }
 
@@ -54,7 +56,9 @@ class SettingsRepositoryImpl @Inject constructor(
         voiceFeedbackEnabled = boolean(VOICE_FEEDBACK_ENABLED, UserSettings().voiceFeedbackEnabled),
         temperatureUnitCelsius = boolean(TEMPERATURE_UNIT_CELSIUS, UserSettings().temperatureUnitCelsius),
         latitudeDeg = double(LATITUDE_DEG),
-        longitudeDeg = double(LONGITUDE_DEG)
+        longitudeDeg = double(LONGITUDE_DEG),
+        travelLimitDeg = get(TRAVEL_LIMIT_DEG)?.toFloatOrNull()?.takeIf { it.isFinite() && it in 1f..70f }
+            ?: UserSettings().travelLimitDeg
     )
 
     private fun UserSettings.toPreferences() = mapOf(
@@ -62,7 +66,8 @@ class SettingsRepositoryImpl @Inject constructor(
         NOTIFICATIONS_ENABLED to notificationsEnabled.toString(),
         HIGH_WIND_ALERTS_ENABLED to highWindAlertsEnabled.toString(),
         VOICE_FEEDBACK_ENABLED to voiceFeedbackEnabled.toString(),
-        TEMPERATURE_UNIT_CELSIUS to temperatureUnitCelsius.toString()
+        TEMPERATURE_UNIT_CELSIUS to temperatureUnitCelsius.toString(),
+        TRAVEL_LIMIT_DEG to travelLimitDeg.toString()
     ) + listOfNotNull(
         latitudeDeg?.let { LATITUDE_DEG to it.toString() },
         longitudeDeg?.let { LONGITUDE_DEG to it.toString() }
@@ -81,6 +86,7 @@ class SettingsRepositoryImpl @Inject constructor(
         const val HIGH_WIND_ALERTS_ENABLED = "high_wind_alerts_enabled"
         const val VOICE_FEEDBACK_ENABLED = "voice_feedback_enabled"
         const val TEMPERATURE_UNIT_CELSIUS = "temperature_unit_celsius"
+        const val TRAVEL_LIMIT_DEG = "tracker_travel_limit_deg"
         const val LATITUDE_DEG = "tracker_latitude_deg"
         const val LONGITUDE_DEG = "tracker_longitude_deg"
     }

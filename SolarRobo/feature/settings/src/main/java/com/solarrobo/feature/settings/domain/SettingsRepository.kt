@@ -9,7 +9,8 @@ data class UserSettings(
     val voiceFeedbackEnabled: Boolean = false,
     val temperatureUnitCelsius: Boolean = true,
     val latitudeDeg: Double? = null,
-    val longitudeDeg: Double? = null
+    val longitudeDeg: Double? = null,
+    val travelLimitDeg: Float = 70f
 )
 
 data class SettingsPatch(
@@ -19,7 +20,8 @@ data class SettingsPatch(
     val voiceFeedbackEnabled: Boolean? = null,
     val temperatureUnitCelsius: Boolean? = null,
     val latitudeDeg: Double? = null,
-    val longitudeDeg: Double? = null
+    val longitudeDeg: Double? = null,
+    val travelLimitDeg: Float? = null
 )
 
 interface SettingsRepository {

@@ -16,7 +16,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -101,8 +100,17 @@ fun TrackScreen(viewModel: TrackViewModel, modifier: Modifier = Modifier, onSetu
             ViewerAccessTooltip(isOperator) { actionModifier ->
                 OutlinedButton(onClick = viewModel::resetFault, enabled = isOperator && active, modifier = actionModifier.fillMaxWidth()) { Text("Reset recoverable fault") }
             }
-            Text("Manual angle · +/-70° (disabled until a verified control path is available)")
-            Slider(value = 0f, onValueChange = {}, valueRange = -70f..70f, enabled = false)
+            Text("Manual jog · 1° steps", style = MaterialTheme.typography.titleMedium)
+            Text("Jog pauses automatic tracking. Stop and restart the tracker service after the adjustment. Travel limits, calibration, link, fault and E-stop interlocks remain active.", style = MaterialTheme.typography.bodySmall)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                val jogEnabled = isOperator && active && connected && tracker?.calibrated == true && tracker.faults.isEmpty() && !state.emergencyLatched
+                ViewerAccessTooltip(isOperator) { actionModifier ->
+                    OutlinedButton(onClick = { viewModel.jog(-1f) }, enabled = jogEnabled, modifier = actionModifier.weight(1f).heightIn(min = 48.dp)) { Text("−1° West") }
+                }
+                ViewerAccessTooltip(isOperator) { actionModifier ->
+                    OutlinedButton(onClick = { viewModel.jog(1f) }, enabled = jogEnabled, modifier = actionModifier.weight(1f).heightIn(min = 48.dp)) { Text("+1° East") }
+                }
+            }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ViewerAccessTooltip(isOperator, modifier = Modifier.weight(1f)) { actionModifier ->
                     OutlinedButton(onClick = onSetup, enabled = isOperator, modifier = actionModifier.fillMaxWidth()) { Text("Set up tracker") }

@@ -45,6 +45,8 @@ interface TrackerEngine {
     fun observeSky(): Flow<SkyObservation>
     suspend fun start()
     suspend fun stop()
+    /** Move by a small signed angle increment; implementations must enforce safety and travel limits. */
+    suspend fun jog(deltaDeg: Float)
     fun calibrate(): Flow<CalibrationStep>
     suspend fun setHome()
     suspend fun zeroCamera()

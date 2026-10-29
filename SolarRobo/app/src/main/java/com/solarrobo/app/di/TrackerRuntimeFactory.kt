@@ -34,7 +34,11 @@ class TrackerRuntimeFactory @Inject constructor(
             motor = device.createMotorAdapter(),
             frames = camera,
             clock = Clock.systemDefaultZone(),
-            tuning = ControllerTuning(latitudeDeg = latitude, longitudeDeg = longitude),
+            tuning = ControllerTuning(
+                latitudeDeg = latitude,
+                longitudeDeg = longitude,
+                thetaLimitDeg = settings.travelLimitDeg.toDouble()
+            ),
             store = stateStore,
             safety = safety,
             logSink = logSink

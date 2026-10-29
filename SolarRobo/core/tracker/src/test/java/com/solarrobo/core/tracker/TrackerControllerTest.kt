@@ -28,6 +28,44 @@ class TrackerControllerTest {
         assertEquals(0, motor.moveCalls)
     }
 
+    @Test fun manualJogIsSafetyGatedAndSingleStep() = runBlocking {
+        val motor = RecordingMotor(connected = true)
+        val controller = TrackerController(
+            motor = motor,
+            frames = FrameSource { null },
+            clock = Clock.fixed(Instant.parse("2026-06-01T12:00:00Z"), ZoneOffset.UTC),
+            tuning = ControllerTuning(37.7, -122.4, cycle = Duration.ofSeconds(1)),
+            store = object : TrackerStateStore {
+                override suspend fun load() = PersistedTrackerState(calibrated = true, homeDeclared = true)
+                override suspend fun save(state: PersistedTrackerState) = Unit
+            },
+            safety = TrackerSafety { operation, _ -> operation == "stop" }
+        )
+
+        val result = runCatching { controller.jog(1f) }
+
+        assertEquals(true, result.isFailure)
+        assertEquals(0, motor.moveCalls)
+    }
+
+    @Test fun manualJogRejectsOutOfRangeStepBeforeAnyActuation() = runBlocking {
+        val motor = RecordingMotor(connected = true)
+        val controller = TrackerController(
+            motor = motor,
+            frames = FrameSource { null },
+            clock = Clock.fixed(Instant.parse("2026-06-01T12:00:00Z"), ZoneOffset.UTC),
+            tuning = ControllerTuning(37.7, -122.4),
+            store = object : TrackerStateStore {
+                override suspend fun load() = PersistedTrackerState(calibrated = true)
+                override suspend fun save(state: PersistedTrackerState) = Unit
+            },
+            safety = TrackerSafety { _, _ -> true }
+        )
+
+        assertEquals(true, runCatching { controller.jog(6f) }.isFailure)
+        assertEquals(0, motor.moveCalls)
+    }
+
     private object EmptyStore : TrackerStateStore {
         override suspend fun load(): PersistedTrackerState? = null
         override suspend fun save(state: PersistedTrackerState) = Unit

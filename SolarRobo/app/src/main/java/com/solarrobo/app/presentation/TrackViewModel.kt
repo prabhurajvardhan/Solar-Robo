@@ -100,6 +100,11 @@ class TrackViewModel @Inject constructor(
 
     fun setHome() = withEngine("Confirm that the panel is physically flat before setting home.") { it.setHome() }
 
+    fun jog(deltaDeg: Float) = withEngine("Start the tracker service and verify the ESP32 link before jogging.") {
+        it.jog(deltaDeg)
+        controls.update { state -> state.copy(message = "Manual jog sent through the safety gate. Automatic tracking is paused; stop and restart the tracker service to resume it.") }
+    }
+
     fun calibrate() {
         if (!isOperator()) return showOperatorRequired()
         val engine = runtimeHolder.engine.value

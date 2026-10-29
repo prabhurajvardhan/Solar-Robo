@@ -27,6 +27,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -367,6 +368,33 @@ class TrackerController(
     override suspend fun stop() {
         job?.cancel(); job = null
         stopMotor()
+        publish()
+    }
+
+    override suspend fun jog(deltaDeg: Float) {
+        require(deltaDeg.isFinite() && deltaDeg != 0f && abs(deltaDeg) <= 5f) {
+            "Manual jog must be a non-zero step of at most 5 degrees."
+        }
+        ensureLoaded()
+        job?.cancelAndJoin()
+        job = null
+        stopMotor()
+        val status = runCatching { motor.status() }.getOrElse {
+            linkState = LinkState.OFFLINE
+            throw IllegalStateException("Tracker status is unavailable; jog was not sent.", it)
+        }
+        lastStatusAtMs = nowMs()
+        linkState = if (status.connected) LinkState.CONNECTED else LinkState.OFFLINE
+        if (!status.connected) throw IllegalStateException("Tracker is offline; jog was not sent.")
+        status.thetaDeg?.let { theta = it.coerceIn(-tuning.thetaLimitDeg, tuning.thetaLimitDeg) }
+        if (!calibrated) throw IllegalStateException("Calibrate the tracker before manual jog.")
+        if (safe("manual-jog-preflight") { true } != true) {
+            throw IllegalStateException("Safety interlocks blocked manual jog; no motion was sent.")
+        }
+        val goal = (theta + deltaDeg).coerceIn(-tuning.thetaLimitDeg, tuning.thetaLimitDeg)
+        if (goal == theta) throw IllegalStateException("Travel limit reached; jog was not sent.")
+        target = goal
+        moveToward(goal, "manual-jog")
         publish()
     }
 
