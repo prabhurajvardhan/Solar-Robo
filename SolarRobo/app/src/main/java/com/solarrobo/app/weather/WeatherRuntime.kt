@@ -37,6 +37,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -76,6 +77,7 @@ class WeatherRuntime @Inject constructor(
     cache: SharedPreferencesForecastCache
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val cameraFrames = Channel<RgbFrame>(Channel.CONFLATED)
     private val provider = CachedForecastProvider(OpenMeteoTransport(), cache)
     private val riskCombiner = ConservativeRiskCombiner(maxForecastAge = Duration.ofHours(12))
     private val learning = VerifiedOutcomeLearning(minimumVerifiedOutcomes = 100)
@@ -114,11 +116,14 @@ class WeatherRuntime @Inject constructor(
             error = modelLoadFailure
         )
         observations.addAll(readCameraHistory())
+        scope.launch(Dispatchers.Default) {
+            for (frame in cameraFrames) processFrame(frame)
+        }
     }
 
     /** Installs an optional local observer on the exact CameraX source used by the tracker. */
     fun attachTo(camera: CameraXFrameSource) {
-        camera.onFrameObserved = { frame -> processFrame(frame) }
+        camera.onFrameObserved = { frame -> cameraFrames.trySend(frame) }
     }
 
     private fun processFrame(frame: RgbFrame) {
@@ -137,8 +142,6 @@ class WeatherRuntime @Inject constructor(
         }.getOrNull()
         latestPrediction = prediction
         latestBrightness = stats?.brightness
-        val classText = prediction?.label?.replace('_', ' ') ?: "Not classified"
-        val confidenceText = prediction?.let { " (%.0f%% confidence%s)".format(it.confidence * 100, if (it.accepted) "" else ", low confidence") }.orEmpty()
         val next = _state.value.copy(
             cameraStatus = if (prediction == null) "Camera frame received; classification unavailable" else "Local camera inference complete",
             prediction = prediction,

@@ -2,6 +2,7 @@ package com.solarrobo.core.camera
 
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
+import android.util.Size
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -15,7 +16,9 @@ import com.solarrobo.core.tracker.RgbFrame
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.ExecutorService
@@ -29,6 +32,7 @@ class CameraXFrameSource(
     private val targetHeight: Int = 240,
 ) : FrameSource, AutoCloseable {
     private val frameMutex = Mutex()
+    private val latestFrame = Channel<RgbFrame>(Channel.CONFLATED)
     private val executor: ExecutorService = Executors.newSingleThreadExecutor { r -> Thread(r, "camera-analysis") }
     private val _status = MutableStateFlow(CameraStatus.IDLE)
     val status: Flow<CameraStatus> = _status.asStateFlow()
@@ -57,8 +61,10 @@ class CameraXFrameSource(
                 try {
                     val cameraProvider = future.get()
                     if (this.owner !== owner || closed.get()) return@addListener
+                    @Suppress("DEPRECATION")
                     val builder = ImageAnalysis.Builder()
                         .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                        .setTargetResolution(Size(targetWidth, targetHeight))
                     try {
                         val backInfo = cameraProvider.availableCameraInfos.firstOrNull { info ->
                             Camera2CameraInfo.from(info).getCameraCharacteristic(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK
@@ -75,6 +81,12 @@ class CameraXFrameSource(
                             val manualSensor = capabilities?.contains(CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_MANUAL_SENSOR) == true &&
                                 exposureRange != null && sensitivityRange != null
                             val extender = Camera2Interop.Extender(builder)
+                            val fpsRanges = info.getCameraCharacteristic(CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)
+                            val requestedFps = fpsRanges?.filter { it.lower >= 10 && it.upper >= 10 }
+                                ?.minByOrNull { kotlin.math.abs(it.upper - 15) }
+                            if (requestedFps != null) {
+                                extender.setCaptureRequestOption(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, requestedFps)
+                            }
                             if (manualSensor) {
                                 extender.setCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF)
                                 extender.setCaptureRequestOption(CaptureRequest.SENSOR_EXPOSURE_TIME, exposureRange!!.lower)
@@ -85,12 +97,16 @@ class CameraXFrameSource(
                                     extender.setCaptureRequestOption(CaptureRequest.CONTROL_AE_EXPOSURE_COMPENSATION, compensation.lower)
                                 }
                             }
-                            _exposureControlReport.value = when {
+                            val exposureReport = when {
                                 manualSensor -> "Requested shortest supported exposure (${exposureRange!!.lower} ns) and lowest sensitivity (${sensitivityRange!!.lower}); device support is best effort"
                                 aeLock && compensation != null && compensation.lower < 0 -> "Requested AE lock and minimum compensation (${compensation.lower}); device support is best effort"
                                 aeLock -> "Requested AE lock; exposure compensation not supported"
                                 compensation != null && compensation.lower < 0 -> "Requested minimum exposure compensation (${compensation.lower}); AE lock not supported"
                                 else -> "Back camera does not report AE lock or negative exposure compensation support"
+                            }
+                            _exposureControlReport.value = exposureReport + when {
+                                requestedFps == null -> ". No reported AE frame-rate range guarantees 10 fps."
+                                else -> ". Requested camera AE range ${requestedFps.lower}–${requestedFps.upper} fps (best effort; measured rate may be lower)."
                             }
                         }
                     } catch (_: Throwable) {
@@ -100,9 +116,21 @@ class CameraXFrameSource(
                     val camera = cameraProvider.bindToLifecycle(owner, CameraSelector.DEFAULT_BACK_CAMERA, useCase)
                     provider = cameraProvider
                     analysis = useCase
+                    while (latestFrame.tryReceive().isSuccess) Unit
+                    useCase.setAnalyzer(executor) { image ->
+                        try {
+                            val frame = Yuv420888Converter.convert(image, targetWidth, targetHeight)
+                            latestFrame.trySend(frame)
+                            _status.value = CameraStatus.STREAMING
+                            runCatching { onFrameObserved?.invoke(frame) }
+                        } catch (_: Throwable) {
+                            _status.value = CameraStatus.ERROR
+                        } finally {
+                            image.close()
+                        }
+                    }
                     val observer = Observer<androidx.camera.core.CameraState> { state ->
                         _status.value = when {
-                            state == null -> CameraStatus.ERROR
                             state.error != null -> CameraStatus.ERROR
                             state.type == androidx.camera.core.CameraState.Type.OPEN -> CameraStatus.STREAMING
                             else -> CameraStatus.READY
@@ -142,32 +170,15 @@ class CameraXFrameSource(
         stateObserver = null
         cameraState = null
         owner = null
+        while (latestFrame.tryReceive().isSuccess) Unit
     }
 
-    /** Install the analyzer only while a consumer requests a frame, then immediately clear it. */
+    /** Consume the latest continuously analysed frame from the dedicated analyzer executor. */
     override suspend fun nextFrame(): RgbFrame? = frameMutex.withLock {
-        val useCase = analysis ?: return@withLock null
-        val result = CompletableDeferred<RgbFrame?>()
-        _status.value = CameraStatus.STREAMING
-        useCase.setAnalyzer(executor) { image ->
-            try {
-                if (result.isActive) {
-                    val frame = Yuv420888Converter.convert(image, targetWidth, targetHeight)
-                    result.complete(frame)
-                    runCatching { onFrameObserved?.invoke(frame) }
-                }
-            } catch (error: Throwable) {
-                result.completeExceptionally(error)
-                _status.value = CameraStatus.ERROR
-            } finally {
-                image.close()
-            }
-        }
-        try {
-            result.await()
-        } finally {
-            useCase.clearAnalyzer()
-            if (_status.value != CameraStatus.ERROR) _status.value = CameraStatus.READY
+        if (owner == null) return@withLock null
+        withTimeoutOrNull(5_000L) {
+            while (analysis == null && owner != null) delay(25L)
+            if (analysis == null) null else latestFrame.receiveCatching().getOrNull()
         }
     }
 

@@ -3,6 +3,7 @@ package com.solarrobo.feature.camera.data
 import android.content.Context
 import androidx.camera.view.PreviewView
 import androidx.lifecycle.LifecycleOwner
+import com.solarrobo.feature.camera.domain.CameraAnalysisState
 import com.solarrobo.feature.camera.domain.CameraConnectionState
 import com.solarrobo.feature.camera.domain.CameraFrame
 import com.solarrobo.feature.camera.domain.CameraRepository
@@ -22,6 +23,7 @@ class CameraRepositoryImpl @Inject constructor(
     private val controller = CameraXController(context)
 
     override fun observeConnectionState(): Flow<CameraConnectionState> = state.asStateFlow()
+    override fun observeAnalysisState(): Flow<CameraAnalysisState> = controller.analysisState
 
     override fun bindPreview(previewView: PreviewView, lifecycleOwner: LifecycleOwner): Result<Unit> {
         val bindResult = controller.bindPreview(previewView, lifecycleOwner)
@@ -29,12 +31,10 @@ class CameraRepositoryImpl @Inject constructor(
         return bindResult
     }
 
-    override suspend fun startStream(): Result<Unit> {
-        return controller.start().onSuccess {
-            state.value = CameraConnectionState.STREAMING
-        }.onFailure {
-            state.value = CameraConnectionState.ERROR
-        }
+    override suspend fun startStream(): Result<Unit> = controller.start().onSuccess {
+        state.value = CameraConnectionState.STREAMING
+    }.onFailure {
+        state.value = CameraConnectionState.ERROR
     }
 
     override suspend fun stopStream() {
@@ -44,9 +44,9 @@ class CameraRepositoryImpl @Inject constructor(
 
     override suspend fun captureSnapshot(): Result<CameraFrame> {
         val result = controller.captureSnapshot()
-        result.onFailure {
-            state.value = CameraConnectionState.ERROR
-        }
+        result.onFailure { state.value = CameraConnectionState.ERROR }
         return result
     }
+
+    override fun setExposureCompensation(index: Int): Result<Unit> = controller.setExposureCompensation(index)
 }

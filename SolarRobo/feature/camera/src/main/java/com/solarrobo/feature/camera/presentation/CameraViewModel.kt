@@ -29,10 +29,17 @@ class CameraViewModel @Inject constructor(
                 _uiState.update { it.copy(connectionState = connectionState) }
             }
         }
+        viewModelScope.launch {
+            repository.observeAnalysisState().collect { analysis ->
+                _uiState.update { it.copy(analysis = analysis) }
+            }
+        }
     }
 
     fun bindPreview(previewView: PreviewView, lifecycleOwner: LifecycleOwner) {
-        repository.bindPreview(previewView, lifecycleOwner)
+        repository.bindPreview(previewView, lifecycleOwner).onFailure { error ->
+            _uiState.update { it.copy(errorMessage = error.message ?: "Unable to bind camera preview") }
+        }
     }
 
     fun onPermissionResult(granted: Boolean) {
@@ -40,7 +47,7 @@ class CameraViewModel @Inject constructor(
             it.copy(
                 permissionGranted = granted,
                 errorMessage = if (!granted) {
-                    "Camera permission was denied. Enable it in Settings to use the Robo camera."
+                    "Camera permission was denied. Enable it in Settings to use the ASTRA camera."
                 } else {
                     null
                 }
@@ -84,6 +91,14 @@ class CameraViewModel @Inject constructor(
             }.onFailure { throwable ->
                 _uiState.update { it.copy(connectionState = CameraConnectionState.ERROR, errorMessage = throwable.message ?: "Snapshot failed") }
             }
+        }
+    }
+
+    fun setExposureCompensation(index: Int) {
+        repository.setExposureCompensation(index).onFailure { error ->
+            _uiState.update { it.copy(errorMessage = error.message ?: "Exposure adjustment is unavailable") }
+        }.onSuccess {
+            _uiState.update { it.copy(errorMessage = null) }
         }
     }
 }
