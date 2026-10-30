@@ -34,7 +34,7 @@ class DataStoreAuthRepository @Inject constructor(
         val cleanName = displayName.trim()
         require(cleanName.isNotEmpty()) { "Enter a display name." }
         require(pin == confirmation) { "PINs do not match." }
-        require(PIN_INPUT.matches(pin)) { "PIN must be 6 to 12 digits." }
+        require(PIN_INPUT.matches(pin)) { "PIN must contain exactly 6 digits." }
         require(profile.first() == null) { "A local profile already exists." }
         val verifier = hasher.create(pin)
         store.update { current -> current + mapOf(
@@ -114,6 +114,6 @@ class DataStoreAuthRepository @Inject constructor(
         const val MAX_LOCKOUT_EXPONENT = 10
         const val DEFAULT_AUTO_LOCK = 5
         val AUTO_LOCK_CHOICES = setOf(1, 5, 15)
-        val PIN_INPUT = Regex("^[0-9]{6,12}$")
+        val PIN_INPUT = Regex("^[0-9]{6}$")
     }
 }
