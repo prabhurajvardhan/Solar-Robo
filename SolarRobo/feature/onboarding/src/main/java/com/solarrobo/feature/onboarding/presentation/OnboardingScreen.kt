@@ -1,77 +1,137 @@
 package com.solarrobo.feature.onboarding.presentation
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.solarrobo.core.ui.theme.ForestInk
-import com.solarrobo.core.ui.theme.Porcelain
-import com.solarrobo.core.ui.theme.Sage
-import com.solarrobo.core.ui.theme.SolarCitron
-import com.solarrobo.feature.onboarding.R
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.solarrobo.core.ui.theme.SolarRoboTheme
 
 @Composable
-fun OnboardingScreen(viewModel: OnboardingViewModel, onOnboardingFinished: () -> Unit, modifier: Modifier = Modifier) {
-    val state by viewModel.uiState.collectAsState()
-    var started by remember { mutableStateOf(false) }
-    var deviceName by remember { mutableStateOf("My Solar Robo") }
-    var wifiSsid by remember { mutableStateOf("") }
-    var wifiPass by remember { mutableStateOf("") }
-    Surface(modifier.fillMaxSize(), color = Porcelain) {
-        if (!started && state.step == OnboardingStep.DISCOVERY) {
-            Column(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(42.dp).clip(RoundedCornerShape(50)).background(SolarCitron))
-                    Column(Modifier.padding(start = 12.dp)) {
-                        Text("SOLAR ROBO", color = ForestInk, fontSize = 20.sp, fontWeight = FontWeight.Bold, letterSpacing = 4.sp)
-                        Text("TRACK  •  ANALYZE  •  PROTECT", color = Sage, fontSize = 10.sp, letterSpacing = 2.sp)
+fun OnboardingScreen(
+    viewModel: OnboardingViewModel,
+    onOnboardingFinished: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var permissionsRequested by remember { mutableStateOf(false) }
+    var cameraPermissionWarning by remember { mutableStateOf<String?>(null) }
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
+        permissionsRequested = true
+        if (results[Manifest.permission.CAMERA] != true) {
+            cameraPermissionWarning = "Camera permission was not granted. You can verify Wi-Fi now, but camera tracking will remain unavailable until permission is granted."
+        }
+        viewModel.continueToWifiSetup()
+    }
+
+    Surface(modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text("ASTRA setup", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
+            Text("Sensorless, single-axis solar tracker · local Wi-Fi only", style = MaterialTheme.typography.titleMedium)
+            if (!permissionsRequested) {
+                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
+                    Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("1 · Protect the camera and mount", style = MaterialTheme.typography.titleMedium)
+                        Text("Secure the phone and place a proper dark solar filter over the camera lens before aiming toward the sun.")
+                        Text("Never point an unfiltered lens at the sun. Do not look at the sun through the camera or leave the phone unattended while aimed at it.")
+                        Text("Keep hands and cables clear of the panel and motor. The ESP32 has no angle encoder or weather sensors; displayed angles are estimates.", style = MaterialTheme.typography.bodySmall)
                     }
                 }
-                Spacer(Modifier.height(46.dp))
-                Text("Your solar system,", color = ForestInk, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
-                Text("understood.", color = Sage, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
-                Spacer(Modifier.height(12.dp))
-                Text("Track performance. Catch issues early.\nStay in control.", color = ForestInk.copy(alpha = .7f), style = MaterialTheme.typography.titleLarge, modifier = Modifier.fillMaxWidth())
-                Spacer(Modifier.height(22.dp))
-                Surface(color = SolarCitron.copy(alpha = .55f), shape = RoundedCornerShape(50), modifier = Modifier.align(Alignment.Start)) {
-                    Text("●  READY TO CONNECT", color = ForestInk, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp, modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp))
+                Button(onClick = {
+                    val requested = buildList {
+                        add(Manifest.permission.CAMERA)
+                        if (Build.VERSION.SDK_INT >= 33) {
+                            add(Manifest.permission.NEARBY_WIFI_DEVICES)
+                            add(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            add(Manifest.permission.ACCESS_FINE_LOCATION)
+                        }
+                    }.toTypedArray()
+                    permissionLauncher.launch(requested)
+                }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+                    Text("Acknowledge safety and continue")
                 }
-                Spacer(Modifier.height(18.dp))
-                Image(painterResource(R.drawable.solar_robo_hero), null, Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(28.dp)), contentScale = ContentScale.Crop)
-                Spacer(Modifier.height(20.dp))
-                Button(onClick = { started = true; viewModel.startScanning() }, colors = ButtonDefaults.buttonColors(containerColor = ForestInk, contentColor = Porcelain), shape = RoundedCornerShape(50), modifier = Modifier.fillMaxWidth().height(62.dp)) { Text("Get started  →", fontSize = 19.sp) }
-                Spacer(Modifier.height(14.dp))
-                Text("Already have an account?  Sign in", color = ForestInk, fontSize = 16.sp)
-                Spacer(Modifier.height(12.dp))
-                Text("—  YOUR SYSTEM. YOUR DATA. YOUR CONTROL.  —", color = Sage, fontSize = 10.sp, letterSpacing = 1.4.sp)
+            } else {
+                cameraPermissionWarning?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                state.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                when (state.step) {
+                    OnboardingStep.SOLAR_SAFETY -> Unit
+                    OnboardingStep.WIFI_LINK -> {
+                        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                            Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("2 · Join and verify the local Wi-Fi link", style = MaterialTheme.typography.titleMedium)
+                                Text("Tap below to open Android's network approval prompt for the ESP32 access point. ASTRA then checks the controller's /status response. No motor command is sent.")
+                                Text("Network name: SolarTracker")
+                                Text("Firmware default password: sun12345. Change it in the supplied firmware before deploying outside a trusted location.", style = MaterialTheme.typography.bodySmall)
+                                Text("The ESP32 network has no internet access. Android may ask whether to stay connected to a network without internet; choose to stay connected.", style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                        Button(
+                            onClick = viewModel::verifyWifiLink,
+                            enabled = !state.isConnecting,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
+                        ) { Text("Join SolarTracker and verify status") }
+                        OutlinedButton(onClick = onOnboardingFinished, modifier = Modifier.fillMaxWidth()) {
+                            Text("Skip for now")
+                        }
+                    }
+                    OnboardingStep.VERIFICATION -> {
+                        CircularProgressIndicator()
+                        Text("Waiting for Android Wi-Fi approval and verifying the ESP32 status response. No movement is requested.")
+                    }
+                    OnboardingStep.COMPLETED -> {
+                        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+                            Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text("Local link verified", style = MaterialTheme.typography.titleLarge)
+                                Text("ASTRA received a controller status response. No motor movement was requested.")
+                                Text("Set the installation latitude and longitude in Settings before starting tracking. Confirm the panel is physically flat before setting Home and calibrating.")
+                                Text("Camera observations are estimates; physical wind, temperature, battery, grid output and panel angle are not measured.", style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                        Button(onClick = onOnboardingFinished, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+                            Text("Go to Today")
+                        }
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
             }
-        } else {
-            PairingFlow(state, deviceName, { deviceName = it }, wifiSsid, { wifiSsid = it }, wifiPass, { wifiPass = it }, viewModel, onOnboardingFinished)
         }
     }
 }
 
+@Preview(showBackground = true)
 @Composable
-private fun PairingFlow(state: OnboardingUiState, deviceName: String, onName: (String) -> Unit, ssid: String, onSsid: (String) -> Unit, pass: String, onPass: (String) -> Unit, viewModel: OnboardingViewModel, onFinished: () -> Unit) {
-    Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Text("Connect your system", style = MaterialTheme.typography.headlineMedium, color = ForestInk, fontWeight = FontWeight.Bold)
-        Text("A few quiet steps and Robo will be ready to track the sun.", color = ForestInk.copy(alpha = .7f))
-        state.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        when (state.step) {
-            OnboardingStep.DISCOVERY -> { Text(if (state.isScanning) "Looking for nearby devices…" else "Choose your Solar Robo controller") ; state.devices.forEach { dev -> OutlinedButton({ viewModel.selectDevice(dev) }, Modifier.fillMaxWidth()) { Text(dev.name) } } }
-            OnboardingStep.CONFIGURATION -> { OutlinedTextField(deviceName, onName, label={Text("Device name")}, modifier=Modifier.fillMaxWidth()); OutlinedTextField(ssid,onSsid,label={Text("Wi-Fi network")},modifier=Modifier.fillMaxWidth()); OutlinedTextField(pass,onPass,label={Text("Wi-Fi password")},modifier=Modifier.fillMaxWidth()); Button({viewModel.confirmOnboarding(deviceName,ssid,pass)}, Modifier.fillMaxWidth()){Text("Save & pair device") } }
-            OnboardingStep.VERIFICATION -> CircularProgressIndicator()
-            OnboardingStep.COMPLETED -> { Text("You’re all set.", style=MaterialTheme.typography.headlineMedium); Button(onFinished, Modifier.fillMaxWidth()){Text("Go to command center")} }
-        }
+private fun OnboardingSafetyPreview() {
+    SolarRoboTheme {
+        Surface { Text("ASTRA setup · filter the camera before aiming at the sun", modifier = Modifier.padding(16.dp)) }
     }
 }

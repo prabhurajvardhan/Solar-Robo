@@ -18,12 +18,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.solarrobo.core.ui.theme.DarkBackground
-import com.solarrobo.core.ui.theme.SolarAmber
+import com.solarrobo.core.ui.theme.DarkBg
+import com.solarrobo.core.ui.theme.SunAmber
 import com.solarrobo.core.ui.theme.SolarRoboTheme
-import com.solarrobo.core.ui.theme.SolarRose
-import com.solarrobo.core.ui.theme.TextPrimary
-import com.solarrobo.core.ui.theme.TextSecondary
+import com.solarrobo.core.ui.theme.ErrorRed
+import com.solarrobo.core.ui.theme.InkPrimary
+import com.solarrobo.core.ui.theme.InkSecondary
 
 @Composable
 fun ErrorView(
@@ -43,12 +43,12 @@ fun ErrorView(
             text = title,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            color = SolarRose
+            color = ErrorRed
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = message,
-            color = TextSecondary,
+            color = InkSecondary,
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.bodyMedium
         )
@@ -57,8 +57,8 @@ fun ErrorView(
             Button(
                 onClick = onRetry,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = SolarAmber,
-                    contentColor = DarkBackground
+                    containerColor = SunAmber,
+                    contentColor = DarkBg
                 )
             ) {
                 Text("Retry Connection")
@@ -72,7 +72,7 @@ fun ErrorView(
 private fun ErrorViewPreview() {
     SolarRoboTheme {
         ErrorView(
-            message = "Unable to connect to Solar Robo device via BLE.",
+            message = "Unable to connect to the SolarTracker Wi-Fi access point.",
             onRetry = {}
         )
     }

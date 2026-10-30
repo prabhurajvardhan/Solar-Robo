@@ -1,5 +1,11 @@
 package com.solarrobo.feature.settings.presentation
 
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.os.PowerManager
+import android.provider.Settings
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -10,28 +16,46 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.solarrobo.feature.settings.components.GeneralSettings
 import com.solarrobo.feature.settings.components.NotificationSettings
 import com.solarrobo.feature.settings.components.VoiceSettings
 import com.solarrobo.feature.settings.domain.SettingsPatch
 import com.solarrobo.feature.settings.domain.UserSettings
+import com.solarrobo.core.contracts.AccessMode
+import com.solarrobo.core.ui.theme.LocalAccessMode
+import com.solarrobo.core.ui.components.ViewerAccessTooltip
 
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
+    onNavigateToSecurity: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -40,6 +64,7 @@ fun SettingsScreen(
         onUpdate = viewModel::update,
         onReset = viewModel::reset,
         onRetry = viewModel::retry,
+        onSecurity = onNavigateToSecurity,
         modifier = modifier
     )
 }
@@ -51,8 +76,10 @@ fun SettingsScreenContent(
     onUpdate: (SettingsPatch) -> Unit,
     onReset: () -> Unit,
     onRetry: () -> Unit,
+    onSecurity: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    val isOperator = LocalAccessMode.current == AccessMode.OPERATOR
     Scaffold(
         topBar = { TopAppBar(title = { Text("Settings & Preferences") }) },
         modifier = modifier
@@ -69,6 +96,8 @@ fun SettingsScreenContent(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (!isOperator) Text("Viewer mode · settings are read-only until Operator unlock.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedButton(onClick = onSecurity, modifier = Modifier.fillMaxWidth()) { Text("Security & access") }
             state.errorMessage?.let { message ->
                 Text(message, color = MaterialTheme.colorScheme.error)
                 Button(onClick = onRetry) {
@@ -82,7 +111,8 @@ fun SettingsScreenContent(
                 else -> SettingsContent(
                     settings = state.settings,
                     onUpdate = onUpdate,
-                    onReset = onReset
+                    onReset = onReset,
+                    isOperator = isOperator
                 )
             }
         }
@@ -93,7 +123,8 @@ fun SettingsScreenContent(
 private fun SettingsContent(
     settings: UserSettings,
     onUpdate: (SettingsPatch) -> Unit,
-    onReset: () -> Unit
+    onReset: () -> Unit,
+    isOperator: Boolean
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -108,7 +139,8 @@ private fun SettingsContent(
                 onDarkThemeToggle = { onUpdate(SettingsPatch(darkTheme = it)) },
                 onTemperatureUnitToggle = {
                     onUpdate(SettingsPatch(temperatureUnitCelsius = it))
-                }
+                },
+                enabled = isOperator
             )
             NotificationSettings(
                 enabled = settings.notificationsEnabled,
@@ -116,19 +148,126 @@ private fun SettingsContent(
                 onToggle = { onUpdate(SettingsPatch(notificationsEnabled = it)) },
                 onHighWindAlertsToggle = {
                     onUpdate(SettingsPatch(highWindAlertsEnabled = it))
-                }
+                },
+                controlsEnabled = isOperator
             )
             VoiceSettings(
                 enabled = settings.voiceFeedbackEnabled,
-                onToggle = { onUpdate(SettingsPatch(voiceFeedbackEnabled = it)) }
+                onToggle = { onUpdate(SettingsPatch(voiceFeedbackEnabled = it)) },
+                controlsEnabled = isOperator
             )
+            TrackerLocationSettings(
+                latitudeDeg = settings.latitudeDeg,
+                longitudeDeg = settings.longitudeDeg,
+                onSave = { latitude, longitude -> onUpdate(SettingsPatch(latitudeDeg = latitude, longitudeDeg = longitude)) },
+                enabled = isOperator
+            )
+            TravelLimitSettings(
+                travelLimitDeg = settings.travelLimitDeg,
+                onSave = { onUpdate(SettingsPatch(travelLimitDeg = it)) },
+                enabled = isOperator
+            )
+            BatteryOptimizationSettings(enabled = isOperator)
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("About ASTRA", style = MaterialTheme.typography.titleMedium)
+                    Text("ASTRA v2.0.0-astra", style = MaterialTheme.typography.bodyLarge)
+                    Text("Sensorless, single-axis solar tracking · offline-first", style = MaterialTheme.typography.bodySmall)
+                }
+            }
         }
         Spacer(Modifier.height(8.dp))
-        OutlinedButton(
-            onClick = onReset,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Restore defaults")
+        ViewerAccessTooltip(isOperator) { actionModifier ->
+            OutlinedButton(
+                onClick = onReset,
+                enabled = isOperator,
+                modifier = actionModifier.fillMaxWidth()
+            ) {
+                Text("Restore defaults")
+            }
+        }
+    }
+}
+
+@Composable
+private fun TrackerLocationSettings(
+    latitudeDeg: Double?,
+    longitudeDeg: Double?,
+    onSave: (Double, Double) -> Unit,
+    enabled: Boolean
+) {
+    var latitude by remember(latitudeDeg) { mutableStateOf(latitudeDeg?.toString().orEmpty()) }
+    var longitude by remember(longitudeDeg) { mutableStateOf(longitudeDeg?.toString().orEmpty()) }
+    var error by remember { mutableStateOf<String?>(null) }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Tracker location", style = MaterialTheme.typography.titleMedium)
+        Text("Used for the sun-position calculation; coordinates stay on this device.", style = MaterialTheme.typography.bodySmall)
+        OutlinedTextField(latitude, { latitude = it }, enabled = enabled, label = { Text("Latitude (−90 to 90)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(longitude, { longitude = it }, enabled = enabled, label = { Text("Longitude (−180 to 180)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), singleLine = true, modifier = Modifier.fillMaxWidth())
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        ViewerAccessTooltip(enabled) { actionModifier -> Button(onClick = {
+            val lat = latitude.toDoubleOrNull()
+            val lon = longitude.toDoubleOrNull()
+            error = when {
+                lat == null || lon == null -> "Enter both coordinates as decimal degrees."
+                lat !in -90.0..90.0 || lon !in -180.0..180.0 -> "Coordinates are outside the valid range."
+                else -> null
+            }
+            if (error == null) onSave(lat!!, lon!!)
+        }, enabled = enabled, modifier = actionModifier.fillMaxWidth()) { Text("Save tracker location") } }
+    }
+}
+
+@Composable
+private fun TravelLimitSettings(
+    travelLimitDeg: Float,
+    onSave: (Float) -> Unit,
+    enabled: Boolean
+) {
+    var selectedLimit by remember(travelLimitDeg) { mutableStateOf(travelLimitDeg) }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Travel limit", style = MaterialTheme.typography.titleMedium)
+        Text("Symmetric limit from flat: ±${selectedLimit.toInt()}°. Never exceeds the mechanical ±70° ceiling. The value is applied when the tracker service starts.", style = MaterialTheme.typography.bodySmall)
+        Slider(value = selectedLimit, onValueChange = { selectedLimit = it }, valueRange = 1f..70f, steps = 68, enabled = enabled)
+        ViewerAccessTooltip(enabled) { actionModifier ->
+            Button(onClick = { onSave(selectedLimit) }, enabled = enabled, modifier = actionModifier.fillMaxWidth()) {
+                Text("Save travel limit")
+            }
+        }
+    }
+}
+
+@Composable
+private fun BatteryOptimizationSettings(enabled: Boolean) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var exempt by remember { mutableStateOf(false) }
+    fun refresh() {
+        exempt = Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
+            context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(context.packageName)
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_RESUME) refresh() }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        refresh()
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Background tracking", style = MaterialTheme.typography.titleMedium)
+        Text(
+            if (exempt) "Battery optimization exemption is enabled."
+            else "Battery optimization may pause background tracking. Exemption is currently not enabled.",
+            style = MaterialTheme.typography.bodySmall
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !exempt) {
+            ViewerAccessTooltip(enabled) { actionModifier -> OutlinedButton(onClick = {
+                val request = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = Uri.parse("package:${context.packageName}")
+                }
+                runCatching { context.startActivity(request) }.onFailure {
+                    context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                }
+            }, enabled = enabled, modifier = actionModifier.fillMaxWidth()) { Text("Review battery-optimization setting") } }
         }
     }
 }

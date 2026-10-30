@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import com.solarrobo.core.ui.components.ViewerAccessTooltip
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,6 +22,7 @@ fun NotificationSettings(
     highWindAlertsEnabled: Boolean,
     onToggle: (Boolean) -> Unit,
     onHighWindAlertsToggle: (Boolean) -> Unit,
+    controlsEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     SettingsCard(title = "Notifications", modifier = modifier) {
@@ -28,13 +30,15 @@ fun NotificationSettings(
             title = "Push notifications",
             description = "Alerts for safety events",
             checked = enabled,
-            onCheckedChange = onToggle
+            onCheckedChange = onToggle,
+            enabled = controlsEnabled
         )
         NotificationSwitchRow(
             title = "High-wind alerts",
             description = "Notify when high winds are detected",
             checked = highWindAlertsEnabled,
-            onCheckedChange = onHighWindAlertsToggle
+            onCheckedChange = onHighWindAlertsToggle,
+            enabled = controlsEnabled
         )
     }
 }
@@ -44,7 +48,8 @@ private fun NotificationSwitchRow(
     title: String,
     description: String,
     checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean
 ) {
     Row(
         modifier = Modifier
@@ -57,11 +62,14 @@ private fun NotificationSwitchRow(
             Text(title, style = MaterialTheme.typography.bodyLarge)
             Text(description, style = MaterialTheme.typography.bodySmall)
         }
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            modifier = Modifier.semantics { contentDescription = title }
-        )
+        ViewerAccessTooltip(enabled) { tooltipModifier ->
+            Switch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+                enabled = enabled,
+                modifier = tooltipModifier.semantics { contentDescription = title }
+            )
+        }
     }
 }
 

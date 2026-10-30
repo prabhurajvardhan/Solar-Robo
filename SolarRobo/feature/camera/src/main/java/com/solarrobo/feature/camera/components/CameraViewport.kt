@@ -11,7 +11,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -27,7 +26,7 @@ fun CameraViewport(
         modifier = modifier
             .fillMaxWidth()
             .height(240.dp)
-            .background(if (isStreaming) Color.Black else Color(0xFF1E1E1E)),
+            .background(MaterialTheme.colorScheme.scrim),
         contentAlignment = Alignment.Center
     ) {
         AndroidView(
@@ -36,7 +35,7 @@ fun CameraViewport(
         )
 
         if (!isStreaming) {
-            Text("Camera Feed Inactive", color = Color.Gray)
+            Text("Camera Feed Inactive", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

@@ -69,7 +69,8 @@ class SettingsViewModelTest {
                 notificationsEnabled = false,
                 highWindAlertsEnabled = false,
                 voiceFeedbackEnabled = true,
-                temperatureUnitCelsius = false
+                temperatureUnitCelsius = false,
+                travelLimitDeg = 52f
             )
         )
         advanceUntilIdle()
@@ -80,7 +81,8 @@ class SettingsViewModelTest {
                 notificationsEnabled = false,
                 highWindAlertsEnabled = false,
                 voiceFeedbackEnabled = true,
-                temperatureUnitCelsius = false
+                temperatureUnitCelsius = false,
+                travelLimitDeg = 52f
             ),
             viewModel.uiState.value.settings
         )
@@ -131,6 +133,9 @@ class SettingsViewModelTest {
         assertEquals(UserSettings(), repository.load().first())
         assertTrue(repository.update(SettingsPatch(darkTheme = false)).isSuccess)
         assertFalse(repository.load().first().darkTheme)
+        assertTrue(repository.update(SettingsPatch(travelLimitDeg = 52f)).isSuccess)
+        assertEquals(52f, repository.load().first().travelLimitDeg)
+        assertTrue(repository.update(SettingsPatch(travelLimitDeg = 71f)).isFailure)
         assertTrue(event.await().timestamp > 0L)
 
         assertTrue(repository.reset().isSuccess)

@@ -16,8 +16,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.solarrobo.core.ui.theme.SolarRoboTheme
-import com.solarrobo.core.ui.theme.TextPrimary
-import com.solarrobo.core.ui.theme.TextSecondary
+import com.solarrobo.core.ui.theme.InkPrimary
+import com.solarrobo.core.ui.theme.InkSecondary
 
 @Composable
 fun EmptyView(
@@ -36,12 +36,12 @@ fun EmptyView(
             text = title,
             fontSize = 18.sp,
             fontWeight = FontWeight.SemiBold,
-            color = TextPrimary
+            color = InkPrimary
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = subtitle,
-            color = TextSecondary,
+            color = InkSecondary,
             textAlign = TextAlign.Center
         )
     }

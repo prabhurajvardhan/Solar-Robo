@@ -34,9 +34,20 @@ class ContractsTest {
         assertEquals(RoboMode.NORMAL, snapshot.mode)
         assertEquals(45.0f, snapshot.panelAngleDeg, 0.001f)
         assertEquals(48.0f, snapshot.targetAngleDeg, 0.001f)
-        assertEquals(320.5f, snapshot.generationWatts, 0.001f)
-        assertEquals(95.0f, snapshot.batteryPercent, 0.001f)
+        assertEquals(320.5f, snapshot.generationWatts!!, 0.001f)
+        assertEquals(95.0f, snapshot.batteryPercent!!, 0.001f)
         assertEquals(1700000000L, snapshot.timestamp)
+    }
+
+    @Test
+    fun unmeasuredRoboPowerTelemetryIsNull() {
+        val snapshot = RoboSnapshot(
+            deviceId = "phone", name = "Solar Robo", connected = false, mode = RoboMode.SAFE,
+            panelAngleDeg = 0f, targetAngleDeg = 0f, generationWatts = null, batteryPercent = null,
+            timestamp = 0L
+        )
+        assertNull(snapshot.generationWatts)
+        assertNull(snapshot.batteryPercent)
     }
 
     @Test

@@ -5,9 +5,9 @@ package com.solarrobo.core.contracts
  */
 enum class RoboMode {
     NORMAL,       // Normal automatic sun-tracking mode
-    OPTIMIZING,   // Fine-tuning angle to maximize light intensity lux
-    CONSERVING,   // Low power mode (e.g. night-time or low battery)
-    PROTECTING,   // Wind-stow or heavy rain protection mode
+    OPTIMIZING,   // Fine-tuning based on camera-derived observations
+    CONSERVING,   // Low solar elevation or configured low-activity mode
+    PROTECTING,   // Camera-jitter heuristic hold or safety event
     FAULT,        // Mechanical or sensor failure detected
     SAFE          // Actuator parked in safe mechanical position (0° horizontal)
 }
@@ -22,7 +22,7 @@ data class RoboSnapshot(
     val mode: RoboMode,
     val panelAngleDeg: Float,
     val targetAngleDeg: Float,
-    val generationWatts: Float,
-    val batteryPercent: Float,
+    val generationWatts: Float?,
+    val batteryPercent: Float?,
     val timestamp: Long
 )

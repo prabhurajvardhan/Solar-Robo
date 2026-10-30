@@ -10,10 +10,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -34,6 +38,7 @@ import com.solarrobo.feature.camera.components.CameraStatus
 import com.solarrobo.feature.camera.components.CameraViewport
 import com.solarrobo.feature.camera.domain.CameraConnectionState
 import com.solarrobo.feature.camera.mock.FakeCameraRepository
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,25 +66,42 @@ fun CameraScreen(
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Optical Tracker Camera") }) },
+        topBar = { TopAppBar(title = { Text("ASTRA Camera") }) },
         modifier = modifier
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             CameraStatus(connectionState = state.connectionState)
             CameraViewport(
                 previewView = previewView,
                 isStreaming = state.connectionState == CameraConnectionState.STREAMING,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.height(240.dp)
             )
+            Text("Image analysis target: 320 × 240 · measured rate: ${state.analysis.framesPerSecond} frames/s")
+            Text("Mean image luminance: ${state.analysis.meanLuma?.let { "%.1f/255 · image statistic".format(it) } ?: "Not available"} · not irradiance")
+            val exposureRange = state.analysis.exposureRange
+            val exposureAvailable = state.analysis.exposureAdjustmentAvailable
+            val sliderMin = if (exposureAvailable) exposureRange.first.toFloat() else -1f
+            val sliderMax = if (exposureAvailable) exposureRange.last.toFloat() else 1f
+            Text("Exposure compensation · ${if (exposureAvailable) "supported range ${exposureRange.first}..${exposureRange.last}" else "not reported by this camera"}")
+            Slider(
+                value = state.analysis.requestedExposureIndex.toFloat().coerceIn(sliderMin, sliderMax),
+                onValueChange = { viewModel.setExposureCompensation(it.roundToInt()) },
+                valueRange = sliderMin..sliderMax,
+                steps = if (exposureAvailable) (exposureRange.last - exposureRange.first - 1).coerceAtLeast(0) else 0,
+                enabled = exposureAvailable
+            )
+            Text("Requested exposure index ${state.analysis.requestedExposureIndex}; device response is best effort. Frames are processed locally.", style = androidx.compose.material3.MaterialTheme.typography.bodySmall)
 
             val snapshot = state.lastCapturedSnapshot
             if (snapshot != null) {
+                Text("Snapshot dimensions: ${snapshot.width} × ${snapshot.height} px (from camera frame)")
                 val bitmap = snapshot.jpegBytes.takeIf { it.isNotEmpty() }
                     ?.let { bytes -> android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size) }
                 if (bitmap != null) {

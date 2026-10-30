@@ -1,6 +1,5 @@
 package com.solarrobo.feature.talk.presentation
 
-import com.solarrobo.core.ai.TernaryModel
 import com.solarrobo.feature.talk.domain.ChatMessage
 
 data class TalkUiState(
@@ -9,7 +8,5 @@ data class TalkUiState(
     val isSending: Boolean = false,
     val error: String? = null,
     val lastIntent: String? = null,
-    val lastConfidence: Float? = null,
-    val installedModels: List<TernaryModel> = emptyList(),
-    val selectedModelId: String? = null
+    val lastConfidence: Float? = null
 )

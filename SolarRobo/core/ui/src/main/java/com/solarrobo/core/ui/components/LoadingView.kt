@@ -14,9 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.solarrobo.core.ui.theme.SolarAmber
+import com.solarrobo.core.ui.theme.SunAmber
 import com.solarrobo.core.ui.theme.SolarRoboTheme
-import com.solarrobo.core.ui.theme.TextSecondary
+import com.solarrobo.core.ui.theme.InkSecondary
 
 @Composable
 fun LoadingView(
@@ -32,13 +32,13 @@ fun LoadingView(
     ) {
         CircularProgressIndicator(
             modifier = Modifier.size(48.dp),
-            color = SolarAmber,
+            color = SunAmber,
             strokeWidth = 3.dp
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = message,
-            color = TextSecondary
+            color = InkSecondary
         )
     }
 }

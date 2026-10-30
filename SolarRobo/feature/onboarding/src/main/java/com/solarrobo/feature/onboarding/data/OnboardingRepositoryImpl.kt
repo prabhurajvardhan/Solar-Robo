@@ -1,9 +1,8 @@
 package com.solarrobo.feature.onboarding.data
 
 import com.solarrobo.core.device.RoboDevice
-import com.solarrobo.feature.onboarding.domain.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import com.solarrobo.feature.onboarding.domain.OnboardingRepository
+import com.solarrobo.feature.onboarding.domain.OnboardingResult
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -11,34 +10,17 @@ import javax.inject.Singleton
 class OnboardingRepositoryImpl @Inject constructor(
     private val roboDevice: RoboDevice
 ) : OnboardingRepository {
-
-    override fun scanDevices(): Flow<List<DeviceCandidate>> = flow {
-        // Discovery flow emitting detected Bluetooth LE peripherals
-        val candidates = listOf(
-            DeviceCandidate("ROBO-ESP32-01", "Solar Robo Alpha", -62),
-            DeviceCandidate("ROBO-ESP32-02", "Solar Robo Garden Unit", -78)
-        )
-        emit(candidates)
-    }
-
-    override suspend fun connectDevice(deviceId: String): Result<Unit> {
-        return roboDevice.connect()
-    }
-
-    override suspend fun saveConfig(config: DeviceConfig): Result<Unit> {
-        // Persist configuration to DataStore preferences
-        return Result.success(Unit)
-    }
-
-    override suspend fun complete(config: DeviceConfig): OnboardingResult {
-        val connectRes = connectDevice(config.deviceId)
-        if (connectRes.isFailure) {
-            return OnboardingResult.Failure("Connection failed to ${config.deviceId}")
+    override suspend fun verifyWifiLink(): OnboardingResult {
+        val connection = roboDevice.connect()
+        if (connection.isFailure) {
+            val reason = connection.exceptionOrNull()?.localizedMessage
+            return OnboardingResult.Failure(reason ?: "Android could not join the SolarTracker Wi-Fi network.")
         }
-        val saveRes = saveConfig(config)
-        if (saveRes.isFailure) {
-            return OnboardingResult.Failure("Failed to persist device configuration")
+        val snapshot = runCatching { roboDevice.getSnapshot() }.getOrNull()
+        return if (snapshot?.connected == true) {
+            OnboardingResult.Success
+        } else {
+            OnboardingResult.Failure("The Wi-Fi request completed, but the ESP32 status check was not verified. Check the AP and try again.")
         }
-        return OnboardingResult.Success(config.deviceId)
     }
 }

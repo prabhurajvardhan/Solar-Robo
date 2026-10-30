@@ -67,6 +67,12 @@ class FakeRoboDevice(
                     commandId = "CMD-${System.currentTimeMillis()}"
                 )
             }
+            RoboCommand.Home -> {
+                _snapshot.update {
+                    it.copy(panelAngleDeg = 0f, targetAngleDeg = 0f, mode = RoboMode.SAFE, timestamp = System.currentTimeMillis())
+                }
+                CommandResult(true, "CMD-${System.currentTimeMillis()}", "Simulated flat reference declared")
+            }
             RoboCommand.SafePosition -> {
                 _snapshot.update {
                     it.copy(

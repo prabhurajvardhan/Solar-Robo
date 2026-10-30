@@ -39,13 +39,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.solarrobo.core.ui.components.SolarCard
-import com.solarrobo.core.ui.theme.DarkBackground
-import com.solarrobo.core.ui.theme.SolarAmber
-import com.solarrobo.core.ui.theme.SolarEmerald
+import com.solarrobo.core.ui.theme.DarkBg
+import com.solarrobo.core.ui.theme.SunAmber
+import com.solarrobo.core.ui.theme.Olive
 import com.solarrobo.core.ui.theme.SolarRoboTheme
-import com.solarrobo.core.ui.theme.SolarRose
-import com.solarrobo.core.ui.theme.SolarSky
-import com.solarrobo.core.ui.theme.TextSecondary
+import com.solarrobo.core.ui.theme.ErrorRed
+import com.solarrobo.core.ui.theme.OliveMutedTint
+import com.solarrobo.core.ui.theme.InkSecondary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,13 +76,13 @@ fun OperationsScreen(
                     Icon(
                         if (isControl) Icons.Default.Tune else Icons.Default.Security,
                         contentDescription = null,
-                        tint = if (isControl) SolarAmber else SolarEmerald
+                        tint = if (isControl) SunAmber else Olive
                     )
                     Column(Modifier.padding(start = 12.dp)) {
                         Text("Offline-ready workspace", fontWeight = FontWeight.Bold)
                         Text(
                             "Simulator-backed data is active. No cloud connection required.",
-                            color = TextSecondary
+                            color = InkSecondary
                         )
                     }
                 }
@@ -91,18 +91,18 @@ fun OperationsScreen(
             if (isControl) {
                 SolarCard {
                     Text("Tracker target angle", fontWeight = FontWeight.Bold)
-                    Text("${angle.toInt()}°", color = SolarAmber, fontWeight = FontWeight.Bold)
+                    Text("${angle.toInt()}°", color = SunAmber, fontWeight = FontWeight.Bold)
                     Slider(
                         value = angle,
                         onValueChange = { angle = it.coerceIn(-85f, 85f) },
                         valueRange = -90f..90f
                     )
-                    Text("Mechanical bounds: −85° to +85°", color = TextSecondary)
+                    Text("Mechanical bounds: −85° to +85°", color = InkSecondary)
                     Spacer(Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(
                             onClick = { message = "Move request staged at ${angle.toInt()}°. Safety Gate: ALLOW." },
-                            colors = ButtonDefaults.buttonColors(containerColor = SolarAmber, contentColor = DarkBackground),
+                            colors = ButtonDefaults.buttonColors(containerColor = SunAmber, contentColor = DarkBg),
                             modifier = Modifier.weight(1f)
                         ) { Text("Stage move") }
                         OutlinedButton(
@@ -116,14 +116,14 @@ fun OperationsScreen(
             SolarCard {
                 Text("Safety Gate", fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
-                GateRow("Wind protection", "Monitoring", SolarEmerald)
-                GateRow("Mechanical limits", "Enforced", SolarEmerald)
-                GateRow("AI command authority", "Blocked by design", SolarSky)
+                GateRow("Wind protection", "Monitoring", Olive)
+                GateRow("Mechanical limits", "Enforced", Olive)
+                GateRow("AI command authority", "Blocked by design", OliveMutedTint)
                 if (isControl) {
                     OutlinedButton(
                         onClick = { message = "Emergency stop staged locally. Hardware dispatch still requires the device adapter." },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = SolarRose)
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = ErrorRed)
                     ) { Text("Emergency stop") }
                 }
             }
@@ -131,7 +131,7 @@ fun OperationsScreen(
             SolarCard {
                 Text("Latest system note", fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))
-                Text(message, color = TextSecondary)
+                Text(message, color = InkSecondary)
             }
 
             if (!isControl) {
@@ -145,14 +145,14 @@ fun OperationsScreen(
                 checks.forEach { (label, value) ->
                     SolarCard {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(label, color = TextSecondary)
-                            Text(value, color = SolarAmber, fontWeight = FontWeight.Bold)
+                            Text(label, color = InkSecondary)
+                            Text(value, color = SunAmber, fontWeight = FontWeight.Bold)
                         }
                         Spacer(Modifier.height(8.dp))
                         LinearProgressIndicator(
                             progress = { 0.82f },
                             modifier = Modifier.fillMaxWidth(),
-                            color = SolarAmber,
+                            color = SunAmber,
                             trackColor = CardDefaults.cardColors().containerColor.copy(alpha = 0.35f)
                         )
                     }
@@ -171,7 +171,7 @@ private fun GateRow(label: String, value: String, color: Color) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label, color = TextSecondary)
+        Text(label, color = InkSecondary)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.CheckCircle, contentDescription = null, tint = color)
             Text(value, modifier = Modifier.padding(start = 6.dp), color = color)

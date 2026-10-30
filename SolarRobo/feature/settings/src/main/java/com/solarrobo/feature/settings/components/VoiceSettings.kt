@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import com.solarrobo.core.ui.components.ViewerAccessTooltip
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,6 +20,7 @@ import androidx.compose.ui.unit.dp
 fun VoiceSettings(
     enabled: Boolean,
     onToggle: (Boolean) -> Unit,
+    controlsEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     SettingsCard(title = "Voice assistant", modifier = modifier) {
@@ -36,11 +38,14 @@ fun VoiceSettings(
                     style = MaterialTheme.typography.bodySmall
                 )
             }
-            Switch(
-                checked = enabled,
-                onCheckedChange = onToggle,
-                modifier = Modifier.semantics { contentDescription = "Voice feedback" }
-            )
+            ViewerAccessTooltip(controlsEnabled) { tooltipModifier ->
+                Switch(
+                    checked = enabled,
+                    onCheckedChange = onToggle,
+                    enabled = controlsEnabled,
+                    modifier = tooltipModifier.semantics { contentDescription = "Voice feedback" }
+                )
+            }
         }
     }
 }

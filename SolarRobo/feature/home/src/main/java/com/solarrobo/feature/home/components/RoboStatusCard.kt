@@ -134,7 +134,7 @@ fun RoboStatusCard(
                 }
 
                 Text(
-                    text = "Gen: %.0f W  •  Battery: %.0f%%".format(robo.generationWatts, robo.batteryPercent),
+                    text = "Power: ${robo.generationWatts?.let { "%.0f W (measured)".format(it) } ?: "Not measured"}  •  Battery: ${robo.batteryPercent?.let { "%.0f%%".format(it) } ?: "Not measured"}",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }

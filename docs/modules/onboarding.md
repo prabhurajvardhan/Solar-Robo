@@ -1,5 +1,7 @@
 # Module Specification: Onboarding (`feature/onboarding`)
 
+> **Legacy notice:** The implementation now uses a user-mediated `SolarTracker` Wi-Fi access point connection via `WifiNetworkSpecifier`; it does not scan for Bluetooth devices. This detailed specification is retained only as historical reference. See [`TRACKER_ARCHITECTURE.md`](../TRACKER_ARCHITECTURE.md).
+
 ## 1. Exact Task & Responsibility
 Discover, connect, and configure a Solar Robo unit via Bluetooth Low Energy (BLE) or local Wi-Fi without operating the solar panel or actuating motors.
 
