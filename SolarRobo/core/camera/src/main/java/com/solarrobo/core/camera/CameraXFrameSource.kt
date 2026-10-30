@@ -6,6 +6,7 @@ import android.util.Size
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
+import androidx.camera.core.Preview
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -43,6 +44,8 @@ class CameraXFrameSource(
 
     @Volatile private var provider: ProcessCameraProvider? = null
     @Volatile private var analysis: ImageAnalysis? = null
+    @Volatile private var preview: Preview? = null
+    @Volatile private var previewSurfaceProvider: Preview.SurfaceProvider? = null
     @Volatile private var owner: LifecycleOwner? = null
     @Volatile private var stateObserver: Observer<androidx.camera.core.CameraState>? = null
     @Volatile private var cameraState: androidx.lifecycle.LiveData<androidx.camera.core.CameraState>? = null
@@ -113,9 +116,11 @@ class CameraXFrameSource(
                         _exposureControlReport.value = "Camera2 exposure controls unavailable; using device defaults"
                     }
                     val useCase = builder.build()
-                    val camera = cameraProvider.bindToLifecycle(owner, CameraSelector.DEFAULT_BACK_CAMERA, useCase)
+                    val previewCase = previewSurfaceProvider?.let { surface -> Preview.Builder().build().also { it.setSurfaceProvider(surface) } }
+                    val camera = cameraProvider.bindToLifecycle(owner, CameraSelector.DEFAULT_BACK_CAMERA, *listOfNotNull(previewCase, useCase).toTypedArray())
                     provider = cameraProvider
                     analysis = useCase
+                    preview = previewCase
                     while (latestFrame.tryReceive().isSuccess) Unit
                     useCase.setAnalyzer(executor) { image ->
                         try {
@@ -149,7 +154,14 @@ class CameraXFrameSource(
         }
     }
 
-    /** Stop capture and release the lifecycle-bound use case; queued frames are discarded. */
+    /** Attach or remove the viewfinder while reusing the same single-frame analysis source. */
+    @Synchronized
+    fun attachPreview(surfaceProvider: Preview.SurfaceProvider?) {
+        previewSurfaceProvider = surfaceProvider
+        owner?.let(::start)
+    }
+
+    /** Stop capture and release the lifecycle-bound use cases; queued frames are discarded. */
     @Synchronized
     fun stop() {
         stopBinding()
@@ -160,12 +172,17 @@ class CameraXFrameSource(
     private fun stopBinding() {
         val cameraProvider = provider
         val useCase = analysis
+        val previewCase = preview
         if (useCase != null) useCase.clearAnalyzer()
-        if (cameraProvider != null && useCase != null) cameraProvider.unbind(useCase)
+        if (cameraProvider != null) {
+            val owned = listOfNotNull(previewCase, useCase)
+            if (owned.isNotEmpty()) cameraProvider.unbind(*owned.toTypedArray())
+        }
         val observer = stateObserver
         val boundOwner = owner
         if (observer != null && boundOwner != null) cameraState?.removeObserver(observer)
         analysis = null
+        preview = null
         provider = null
         stateObserver = null
         cameraState = null

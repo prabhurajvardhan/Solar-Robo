@@ -39,6 +39,21 @@ data class EnergyEstimate(
 
 data class CalibrationStep(val name: String, val progress: Float, val message: String, val complete: Boolean = false)
 
+enum class LightFollowPhase { IDLE, SEARCHING, LEARNING, LOCKED, MOVING, LOST, END_OF_TRAVEL, ERROR }
+
+data class LightFollowSnapshot(
+    val phase: LightFollowPhase = LightFollowPhase.IDLE,
+    val lightX: Float? = null,
+    val lightY: Float? = null,
+    val areaPixels: Int? = null,
+    val errorPx: Float? = null,
+    val errorDeg: Float? = null,
+    val moves: Int = 0,
+    val pxPerForwardSecond: Float? = null,
+    val message: String? = null,
+    val darkFilterWarning: Boolean = false
+)
+
 /** Tracking lifecycle boundary exposed to the app; all physical actions remain SafetyGate-owned. */
 interface TrackerEngine {
     fun observeState(): Flow<TrackerSnapshot>
@@ -47,6 +62,9 @@ interface TrackerEngine {
     suspend fun stop()
     /** Move by a small signed angle increment; implementations must enforce safety and travel limits. */
     suspend fun jog(deltaDeg: Float)
+    fun observeLightFollow(): Flow<LightFollowSnapshot>
+    suspend fun startLightFollow()
+    suspend fun stopLightFollow()
     fun calibrate(): Flow<CalibrationStep>
     suspend fun setHome()
     suspend fun zeroCamera()

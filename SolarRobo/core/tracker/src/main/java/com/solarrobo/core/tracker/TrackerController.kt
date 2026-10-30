@@ -2,6 +2,8 @@ package com.solarrobo.core.tracker
 
 import com.solarrobo.core.contracts.AngleSource
 import com.solarrobo.core.contracts.LinkState
+import com.solarrobo.core.contracts.LightFollowPhase
+import com.solarrobo.core.contracts.LightFollowSnapshot
 import com.solarrobo.core.contracts.SkyObservation
 import com.solarrobo.core.contracts.SafetyContext
 import com.solarrobo.core.contracts.TrackerLogRecord
@@ -139,11 +141,70 @@ class TrackerController(
     private var windHold = false
     private var jamStreak = 0
     private var job: Job? = null
+    private var followJob: Job? = null
+    private var followLoop: LightFollowLoop? = null
+    private val followState = MutableStateFlow(LightFollowSnapshot())
     private val sky = MutableStateFlow(SkyObservation(false, null, null, null, null, WindRisk.UNKNOWN, nowMs()))
     private val state = MutableStateFlow(snapshot())
 
     override fun observeState(): StateFlow<TrackerSnapshot> = state.asStateFlow()
     override fun observeSky(): StateFlow<SkyObservation> = sky.asStateFlow()
+    override fun observeLightFollow(): StateFlow<LightFollowSnapshot> = followState.asStateFlow()
+
+    override suspend fun startLightFollow() {
+        if (followJob?.isActive == true) return
+        if (job?.isActive == true) {
+            job?.cancelAndJoin()
+            job = null
+        }
+        ensureLoaded()
+        val status = motor.status()
+        lastStatusAtMs = nowMs()
+        linkState = if (status.connected) LinkState.CONNECTED else LinkState.OFFLINE
+        if (!status.connected) throw IllegalStateException("Connect to the SolarTracker Wi-Fi link before light-follow.")
+        if (status.busy) throw IllegalStateException("The motor is already running; light-follow was not started.")
+        if (!calibrated) throw IllegalStateException("Calibrate the tracker before light-follow.")
+        if (faults.any { it != TrackerFault.CALIBRATION_REQUIRED }) throw IllegalStateException("Clear active tracker faults before light-follow.")
+        if (safe("light-follow-preflight") { true } != true) throw IllegalStateException("Safety interlocks blocked light-follow.")
+        val loop = LightFollowLoop(
+            frames = frames,
+            move = { direction, requestedMs ->
+                val moveDirection = if (direction > 0) MoveDirection.FORWARD else MoveDirection.REVERSE
+                val signedSpeed = moveDirection.sign * thetaPerSecond
+                val roomDeg = if (signedSpeed > 0) tuning.thetaLimitDeg - theta else -tuning.thetaLimitDeg - theta
+                val safeDuration = minOf(requestedMs, (abs(roomDeg / signedSpeed) * 1_000.0).toLong())
+                if (safeDuration <= 0L) return@LightFollowLoop 0L
+                val allowed = safe("light-follow:${moveDirection.name}") {
+                    motor.move(moveDirection, safeDuration.coerceIn(1L, 1_500L))
+                } ?: throw IllegalStateException("Safety interlocks rejected the light-follow move; no movement was accepted.")
+                if (allowed > 0L) {
+                    theta = (theta + signedSpeed * allowed / 1_000.0).coerceIn(-tuning.thetaLimitDeg, tuning.thetaLimitDeg)
+                    persist()
+                    publish()
+                }
+                allowed
+            },
+            stopMotor = { stopMotor() },
+            nowMillis = clock::millis,
+            initialSunElevationDeg = state.value.sunElevationDeg?.toDouble(),
+            imageWidth = 320,
+            horizontalFovDeg = tuning.cameraHorizontalFovDeg
+        )
+        followLoop = loop
+        followState.value = LightFollowSnapshot(phase = LightFollowPhase.SEARCHING)
+        followJob = scope.launch {
+            val observer = launch { loop.state.collect { followState.value = it } }
+            try { loop.run() } finally { observer.cancel() }
+        }
+    }
+
+    override suspend fun stopLightFollow() {
+        followJob?.cancelAndJoin()
+        followJob = null
+        followLoop?.stop()
+        followLoop = null
+        followState.value = LightFollowSnapshot(phase = LightFollowPhase.IDLE)
+    }
 
     override suspend fun start() {
         if (job?.isActive == true) return
@@ -366,6 +427,7 @@ class TrackerController(
     }
 
     override suspend fun stop() {
+        stopLightFollow()
         job?.cancel(); job = null
         stopMotor()
         publish()

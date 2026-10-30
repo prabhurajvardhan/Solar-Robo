@@ -2,6 +2,7 @@ package com.solarrobo.app.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.camera.view.PreviewView
 import com.solarrobo.app.di.TrackerRuntimeHolder
 import com.solarrobo.core.camera.CameraXFrameSource
 import com.solarrobo.core.contracts.CalibrationStep
@@ -12,6 +13,7 @@ import com.solarrobo.core.contracts.SafetyContext
 import com.solarrobo.core.contracts.SafetyDecision
 import com.solarrobo.core.contracts.SafetyGate
 import com.solarrobo.core.contracts.TrackerSnapshot
+import com.solarrobo.core.contracts.LightFollowSnapshot
 import com.solarrobo.core.contracts.AccessMode
 import com.solarrobo.core.device.RoboDevice
 import com.solarrobo.feature.auth.domain.AuthSession
@@ -36,7 +38,8 @@ data class TrackUiState(
     val calibrationStep: CalibrationStep? = null,
     val emergencyLatched: Boolean = false,
     val message: String? = null,
-    val isSendingStop: Boolean = false
+    val isSendingStop: Boolean = false,
+    val lightFollow: LightFollowSnapshot = LightFollowSnapshot()
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -57,6 +60,10 @@ class TrackViewModel @Inject constructor(
         viewModelScope.launch {
             runtimeHolder.engine.flatMapLatest { engine -> engine?.observeState() ?: flowOf(null) }
                 .collect { tracker -> controls.update { it.copy(tracker = tracker) } }
+        }
+        viewModelScope.launch {
+            runtimeHolder.engine.flatMapLatest { engine -> engine?.observeLightFollow() ?: flowOf(LightFollowSnapshot()) }
+                .collect { follow -> controls.update { it.copy(lightFollow = follow) } }
         }
         viewModelScope.launch {
             runtimeHolder.error.collect { message -> if (message != null) controls.update { it.copy(message = message) } }
@@ -103,6 +110,30 @@ class TrackViewModel @Inject constructor(
     fun jog(deltaDeg: Float) = withEngine("Start the tracker service and verify the ESP32 link before jogging.") {
         it.jog(deltaDeg)
         controls.update { state -> state.copy(message = "Manual jog sent through the safety gate. Automatic tracking is paused; stop and restart the tracker service to resume it.") }
+    }
+
+    fun startLightFollow() {
+        if (!isOperator()) return showOperatorRequired()
+        val engine = runtimeHolder.engine.value
+        if (engine == null) return controls.update { it.copy(message = "Start the tracker service and verify camera permission, calibration, and ESP32 link first.") }
+        controls.update { it.copy(message = "Keep hands and cables clear of the panel. Starting light-follow.") }
+        viewModelScope.launch {
+            runCatching { engine.startLightFollow() }.onFailure { error ->
+                controls.update { it.copy(message = error.localizedMessage ?: "Light-follow could not start") }
+            }
+        }
+    }
+
+    fun stopLightFollow() {
+        viewModelScope.launch { runCatching { runtimeHolder.engine.value?.stopLightFollow() } }
+    }
+
+    fun bindLightFollowPreview(previewView: PreviewView) {
+        cameraSource.attachPreview(previewView.surfaceProvider)
+    }
+
+    fun clearLightFollowPreview() {
+        cameraSource.attachPreview(null)
     }
 
     fun calibrate() {

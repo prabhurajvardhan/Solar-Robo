@@ -1,5 +1,11 @@
 package com.solarrobo.app.presentation
 
+import androidx.camera.view.PreviewView
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,13 +24,20 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.solarrobo.core.contracts.AccessMode
+import com.solarrobo.core.contracts.LightFollowPhase
 import com.solarrobo.core.ui.theme.LocalAccessMode
 import com.solarrobo.core.ui.components.ViewerAccessTooltip
 import com.solarrobo.app.service.TrackerForegroundService
@@ -35,8 +48,27 @@ fun TrackScreen(viewModel: TrackViewModel, modifier: Modifier = Modifier, onSetu
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val isOperator = LocalAccessMode.current == AccessMode.OPERATOR
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val previewView = remember(context) { PreviewView(context) }
     val connected = state.snapshot?.connected == true
     val active = state.tracker != null
+    DisposableEffect(lifecycleOwner, viewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> if (active) viewModel.bindLightFollowPreview(previewView)
+                Lifecycle.Event.ON_STOP, Lifecycle.Event.ON_DESTROY -> {
+                    viewModel.stopLightFollow()
+                    viewModel.clearLightFollowPreview()
+                }
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            viewModel.stopLightFollow()
+        }
+    }
     Scaffold { insets ->
         Column(
             modifier.fillMaxSize().padding(insets).verticalScroll(rememberScrollState()).padding(20.dp),
@@ -87,6 +119,54 @@ fun TrackScreen(viewModel: TrackViewModel, modifier: Modifier = Modifier, onSetu
             }
             Text("Calibration observes filtered sun images and drift for about six minutes. Never aim an unfiltered camera at the sun.", style = MaterialTheme.typography.bodySmall)
             Text("Camera frames are processed locally for sun/sky statistics; the app does not save or upload them.", style = MaterialTheme.typography.bodySmall)
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Light-follow demo", style = MaterialTheme.typography.titleMedium)
+                    Text("Follows a bright, small camera spot using deterministic pixel feedback. This is a torch/demo mode, not solar tracking.", style = MaterialTheme.typography.bodySmall)
+                    LaunchedEffect(previewView, active) { if (active) viewModel.bindLightFollowPreview(previewView) }
+                    DisposableEffect(previewView) {
+                        onDispose { viewModel.clearLightFollowPreview() }
+                    }
+                    Box(Modifier.fillMaxWidth().height(200.dp)) {
+                        AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
+                        val crosshairColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        val markerColor = MaterialTheme.colorScheme.error
+                        Canvas(Modifier.fillMaxSize()) {
+                            val center = Offset(size.width / 2f, size.height / 2f)
+                            drawLine(crosshairColor, Offset(center.x - 14.dp.toPx(), center.y), Offset(center.x + 14.dp.toPx(), center.y), strokeWidth = 2.dp.toPx())
+                            drawLine(crosshairColor, Offset(center.x, center.y - 14.dp.toPx()), Offset(center.x, center.y + 14.dp.toPx()), strokeWidth = 2.dp.toPx())
+                            val lx = state.lightFollow.lightX
+                            val ly = state.lightFollow.lightY
+                            if (lx != null && ly != null) {
+                                val sx = lx / 320f * size.width
+                                val sy = ly / 240f * size.height
+                                drawCircle(markerColor, radius = 10.dp.toPx(), center = Offset(sx, sy), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()))
+                            }
+                        }
+                    }
+                    Text("State: ${state.lightFollow.phase.displayName()}", style = MaterialTheme.typography.titleLarge)
+                    Text("Spot: ${state.lightFollow.lightX?.let { "x %.1f px".format(it) } ?: "Not detected"} · error: ${state.lightFollow.errorPx?.let { "%.1f px".format(it) } ?: "Not measured"} · ${state.lightFollow.errorDeg?.let { "%.2f°".format(it) } ?: "Not measured"}")
+                    Text("Estimated panel angle: ${tracker?.estimatedPanelAngleDeg?.let { "%.1f°".format(it) } ?: "Not available"} · moves: ${state.lightFollow.moves}")
+                    state.lightFollow.darkFilterWarning.let { warning ->
+                        if (warning || (tracker?.sunElevationDeg ?: 0f) > 8f) {
+                            Text("Dark-filter warning: never use this mode with the real sun in view. Cover the camera with a proper solar filter or point it away from the sun.", color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                    state.lightFollow.message?.let { Text(it, color = if (state.lightFollow.phase == LightFollowPhase.ERROR || state.lightFollow.phase == LightFollowPhase.END_OF_TRAVEL) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant) }
+                    Text("Keep hands and cables clear of the panel. Follow mode sends motor commands only after a deliberate Start and stops on error, link loss, lock, E-stop, or app lifecycle shutdown.", style = MaterialTheme.typography.bodySmall)
+                    Button(
+                        onClick = viewModel::startLightFollow,
+                        enabled = isOperator && active && connected && tracker?.calibrated == true && tracker.faults.isEmpty() && !state.emergencyLatched && state.lightFollow.phase in setOf(LightFollowPhase.IDLE, LightFollowPhase.ERROR, LightFollowPhase.LOST, LightFollowPhase.END_OF_TRAVEL),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
+                    ) { Text("Start light-follow") }
+                    Button(
+                        onClick = viewModel::stopLightFollow,
+                        enabled = state.lightFollow.phase !in setOf(LightFollowPhase.IDLE, LightFollowPhase.ERROR, LightFollowPhase.END_OF_TRAVEL),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) { Text("STOP LIGHT-FOLLOW") }
+                }
+            }
             Button(
                 onClick = viewModel::emergencyStop,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp),
@@ -119,6 +199,17 @@ fun TrackScreen(viewModel: TrackViewModel, modifier: Modifier = Modifier, onSetu
             Text("Battery, electrical output, physical wind, rain, and panel encoders are not measured by this hardware.", style = MaterialTheme.typography.bodySmall)
         }
     }
+}
+
+private fun LightFollowPhase.displayName(): String = when (this) {
+    LightFollowPhase.IDLE -> "Idle"
+    LightFollowPhase.SEARCHING -> "Searching"
+    LightFollowPhase.LEARNING -> "Learning"
+    LightFollowPhase.LOCKED -> "Locked"
+    LightFollowPhase.MOVING -> "Moving"
+    LightFollowPhase.LOST -> "Lost · holding position"
+    LightFollowPhase.END_OF_TRAVEL -> "End of travel"
+    LightFollowPhase.ERROR -> "Stopped · error"
 }
 
 @Preview(showBackground = true)
