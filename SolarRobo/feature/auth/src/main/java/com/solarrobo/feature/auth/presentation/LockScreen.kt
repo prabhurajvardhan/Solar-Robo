@@ -79,8 +79,8 @@ fun LockScreenContent(
             Text("Enter your local PIN to enable operator controls.", style = MaterialTheme.typography.bodyMedium)
             OutlinedTextField(
                 value = pin,
-                onValueChange = { pin = it.filter(Char::isDigit).take(12) },
-                label = { Text("PIN") },
+                onValueChange = { pin = it.filter(Char::isDigit).take(6) },
+                label = { Text("PIN (6 digits)") },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
@@ -88,7 +88,7 @@ fun LockScreenContent(
             )
             state.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             state.pinMessage?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
-            Button(onClick = { onUnlock(pin); pin = "" }, enabled = pin.length >= 6 && state.lockoutRemainingMs <= 0L, modifier = Modifier.fillMaxWidth()) {
+            Button(onClick = { onUnlock(pin); pin = "" }, enabled = pin.length == 6 && state.lockoutRemainingMs <= 0L, modifier = Modifier.fillMaxWidth()) {
                 Text("Unlock as Operator")
             }
             if (state.profile?.biometricEnabled == true) {
@@ -96,6 +96,7 @@ fun LockScreenContent(
             }
             OutlinedButton(onClick = onViewer, modifier = Modifier.fillMaxWidth()) { Text("Continue as Viewer · read-only") }
             Text("Operator controls remain locked until a valid PIN or device credential is verified.", style = MaterialTheme.typography.bodySmall)
+            Text("ASTRA 2.0.0-astra", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

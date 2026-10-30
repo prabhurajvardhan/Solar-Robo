@@ -46,17 +46,18 @@ fun CreateProfileContent(
             Text("Create local profile", style = MaterialTheme.typography.headlineMedium)
             Text("This profile stays on this device. Your PIN is stored only as a salted verifier in encrypted local storage.", style = MaterialTheme.typography.bodyMedium)
             OutlinedTextField(displayName, { displayName = it.take(48) }, label = { Text("Display name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(pin, { pin = it.filter(Char::isDigit).take(12) }, label = { Text("Create PIN (6–12 digits)") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(confirmation, { confirmation = it.filter(Char::isDigit).take(12) }, label = { Text("Confirm PIN") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(pin, { pin = it.filter(Char::isDigit).take(6) }, label = { Text("Create PIN (6 digits)") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(confirmation, { confirmation = it.filter(Char::isDigit).take(6) }, label = { Text("Confirm PIN") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), modifier = Modifier.fillMaxWidth())
             Text("Allow device biometric unlock", style = MaterialTheme.typography.titleMedium)
             Switch(checked = biometric, onCheckedChange = { biometric = it })
             state.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Button(
                 onClick = { onCreate(displayName, pin, confirmation, biometric) },
-                enabled = !state.isLoading && displayName.isNotBlank() && pin.length >= 6 && pin == confirmation,
+                enabled = !state.isLoading && displayName.isNotBlank() && pin.length == 6 && pin == confirmation,
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Create profile") }
             Text("No account or cloud recovery is used. Keep your PIN private.", style = MaterialTheme.typography.bodySmall)
+            Text("ASTRA 2.0.0-astra", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

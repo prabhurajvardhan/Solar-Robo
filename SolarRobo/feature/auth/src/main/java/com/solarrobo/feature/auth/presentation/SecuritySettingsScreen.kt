@@ -68,10 +68,10 @@ fun SecuritySettingsContent(
             if (!isOperator) Text("Viewer mode · security settings are read-only until Operator unlock.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Profile: ${state.profile?.displayName ?: "Not available"}")
             Text("PIN change")
-            OutlinedTextField(currentPin, { currentPin = it.filter(Char::isDigit).take(12) }, enabled = isOperator, label = { Text("Current PIN") }, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), singleLine = true, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(newPin, { newPin = it.filter(Char::isDigit).take(12) }, enabled = isOperator, label = { Text("New PIN (6–12 digits)") }, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), singleLine = true, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(confirmPin, { confirmPin = it.filter(Char::isDigit).take(12) }, enabled = isOperator, label = { Text("Confirm new PIN") }, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), singleLine = true, modifier = Modifier.fillMaxWidth())
-            Button(onClick = { onChangePin(currentPin, newPin, confirmPin); currentPin = ""; newPin = ""; confirmPin = "" }, enabled = isOperator && currentPin.length >= 6 && newPin.length >= 6 && newPin == confirmPin) { Text("Change PIN") }
+            OutlinedTextField(currentPin, { currentPin = it.filter(Char::isDigit).take(6) }, enabled = isOperator, label = { Text("Current PIN (6 digits)") }, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(newPin, { newPin = it.filter(Char::isDigit).take(6) }, enabled = isOperator, label = { Text("New PIN (6 digits)") }, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(confirmPin, { confirmPin = it.filter(Char::isDigit).take(6) }, enabled = isOperator, label = { Text("Confirm new PIN") }, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), singleLine = true, modifier = Modifier.fillMaxWidth())
+            Button(onClick = { onChangePin(currentPin, newPin, confirmPin); currentPin = ""; newPin = ""; confirmPin = "" }, enabled = isOperator && currentPin.length == 6 && newPin.length == 6 && newPin == confirmPin) { Text("Change PIN") }
             state.pinMessage?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
             Text("Device authentication")
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -97,11 +97,11 @@ fun SecuritySettingsContent(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("This clears the local profile, saved preferences, and local database rows. This action cannot be undone.")
-                    OutlinedTextField(resetPin, { resetPin = it.filter(Char::isDigit).take(12) }, label = { Text("Confirm with PIN") }, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), singleLine = true)
+                    OutlinedTextField(resetPin, { resetPin = it.filter(Char::isDigit).take(6) }, label = { Text("Confirm with PIN") }, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword), singleLine = true)
                 }
             },
             confirmButton = {
-                TextButton(onClick = { onReset(resetPin); showReset = false; resetPin = "" }, enabled = resetPin.length >= 6) { Text("Erase data") }
+                TextButton(onClick = { onReset(resetPin); showReset = false; resetPin = "" }, enabled = resetPin.length == 6) { Text("Erase data") }
             },
             dismissButton = { TextButton(onClick = { showReset = false; resetPin = "" }) { Text("Cancel") } }
         )

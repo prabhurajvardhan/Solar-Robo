@@ -12,7 +12,7 @@ class PinHasher @Inject constructor() {
     private val random = SecureRandom()
 
     fun create(pin: String): PinVerifier {
-        require(pin.matches(PIN_PATTERN)) { "PIN must contain 6 to 12 digits." }
+        require(pin.matches(PIN_PATTERN)) { "PIN must contain exactly 6 digits." }
         val salt = ByteArray(SALT_BYTES).also(random::nextBytes)
         val derived = derive(pin, salt)
         return try {
@@ -53,7 +53,7 @@ class PinHasher @Inject constructor() {
         const val ITERATIONS = 120_000
         const val OUTPUT_BYTES = 32
         const val SALT_BYTES = 16
-        private val PIN_PATTERN = Regex("^[0-9]{6,12}$")
+        private val PIN_PATTERN = Regex("^[0-9]{6}$")
     }
 }
 
