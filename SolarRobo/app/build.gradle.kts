@@ -13,8 +13,8 @@ android {
         applicationId = "com.solarrobo.app"
         minSdk = 30
         targetSdk = 35
-        versionCode = 2
-        versionName = "2.0.0-astra"
+        versionCode = 3
+        versionName = "2.1.0-astra-ui"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

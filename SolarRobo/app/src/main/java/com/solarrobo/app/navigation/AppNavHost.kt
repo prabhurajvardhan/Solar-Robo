@@ -52,7 +52,9 @@ fun AppNavHost(
         composable(Screen.Control.route) {
             TrackScreen(viewModel = hiltViewModel(), onSetup = { navController.navigate(Screen.Onboarding.route) })
         }
-        composable(Screen.Analytics.route) { InsightsScreen(viewModel = hiltViewModel()) }
+        composable(Screen.Analytics.route) {
+            InsightsScreen(viewModel = hiltViewModel(), weatherViewModel = hiltViewModel())
+        }
         composable(Screen.Settings.route) {
             SettingsScreen(viewModel = hiltViewModel(), onNavigateToSecurity = { navController.navigate(Screen.Security.route) })
         }

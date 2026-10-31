@@ -30,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solarrobo.app.weather.WeatherUiState
 import com.solarrobo.core.contracts.AccessMode
+import com.solarrobo.core.ui.components.MetricTile
+import com.solarrobo.core.ui.components.SolarPanelHero
 import com.solarrobo.core.ui.theme.LocalAccessMode
 import com.solarrobo.core.ui.theme.SolarRoboTheme
 import com.solarrobo.core.weather.AdvisoryAction
@@ -83,6 +85,10 @@ fun HomeScreenContent(
             }
             Text(if (mode == AccessMode.OPERATOR) "Operator" else "Viewer", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+        SolarPanelHero(
+            panelAngleDeg = state.panelAngleDeg,
+            status = if (state.isConnected) "Tracking active · local controller connected" else "Waiting for local controller link"
+        )
         if (state.isLoading) {
             Card(Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(20.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -102,20 +108,22 @@ fun HomeScreenContent(
                 }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                DashboardMetricCard(
-                    title = "Panel angle",
+                MetricTile(
+                    label = "Panel angle",
                     value = state.panelAngleDeg?.let { "%.1f°".format(it) } ?: "Not measured",
-                    note = if (state.panelAngleDeg == null) "Camera estimate unavailable" else "Camera-derived estimate · no encoder"
-                , modifier = Modifier.weight(1f))
-                DashboardMetricCard(
-                    title = "Solar target",
-                    value = state.targetAngleDeg?.let { "%.1f°".format(it) } ?: "Not available",
-                    note = "Calculated single-axis angle"
-                , modifier = Modifier.weight(1f))
+                    source = if (state.panelAngleDeg == null) "Not measured" else "Measured",
+                    modifier = Modifier.weight(1f)
+                )
+                MetricTile(
+                    label = "Solar target",
+                    value = state.targetAngleDeg?.let { "%.1f°".format(it) } ?: "Not measured",
+                    source = "Calculated",
+                    modifier = Modifier.weight(1f)
+                )
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                DashboardMetricCard(title = "Power", value = "Not measured", note = "No electrical meter", modifier = Modifier.weight(1f))
-                DashboardMetricCard(title = "Battery", value = "Not measured", note = "No battery telemetry", modifier = Modifier.weight(1f))
+                MetricTile(label = "Power", value = "Not measured", source = "Not measured", modifier = Modifier.weight(1f))
+                MetricTile(label = "Battery", value = "Not measured", source = "Not measured", modifier = Modifier.weight(1f))
             }
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                 Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -153,7 +161,7 @@ fun HomeScreenContent(
             Text(" Open tracker controls")
         }
         OutlinedButton(onClick = onNavigateToSimulator, modifier = Modifier.fillMaxWidth()) { Text("Open simulator · simulated values") }
-        Text("ASTRA v2.0.0-astra · values are local, calculated, camera-estimated, or explicitly Not measured.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("ASTRA 2.1.0-astra-ui · values are local, calculated, camera-estimated, or explicitly Not measured.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

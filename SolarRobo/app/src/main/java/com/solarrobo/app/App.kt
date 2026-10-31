@@ -5,12 +5,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TrackChanges
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -25,12 +24,16 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.solarrobo.app.navigation.AppNavHost
 import com.solarrobo.app.navigation.Screen
+import com.solarrobo.core.ui.components.AstraBottomNavigation
+import com.solarrobo.core.ui.components.AstraDestination
+import com.solarrobo.core.ui.components.AstraTopBar
 import com.solarrobo.core.ui.theme.LocalAccessMode
 import com.solarrobo.core.ui.theme.SolarRoboTheme
 import com.solarrobo.feature.auth.presentation.AuthViewModel
 import com.solarrobo.feature.auth.presentation.CreateProfileScreen
 import com.solarrobo.feature.auth.presentation.LockScreen
 import com.solarrobo.feature.settings.presentation.SettingsViewModel
+import com.solarrobo.app.presentation.TrackViewModel
 
 @Composable
 fun SolarRoboApp() {
@@ -56,33 +59,40 @@ fun SolarRoboApp() {
 private fun MainSolarRoboContent() {
     val navController = rememberNavController()
     hiltViewModel<SettingsViewModel>()
+    val trackerViewModel: TrackViewModel = hiltViewModel()
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val destinations = listOf(
-        Triple(Screen.Home, "Dashboard", Icons.Default.Home),
-        Triple(Screen.Control, "Track", Icons.Default.TrackChanges),
-        Triple(Screen.Analytics, "Insights", Icons.Default.Insights),
-        Triple(Screen.Settings, "Settings", Icons.Default.Settings)
+        AstraDestination(Screen.Home.route, "Home", Icons.Default.Home),
+        AstraDestination(Screen.Control.route, "Track", Icons.Default.TrackChanges),
+        AstraDestination(Screen.Analytics.route, "Sky", Icons.Default.Cloud),
+        AstraDestination(Screen.Analytics.route, "History", Icons.Default.History),
+        AstraDestination(Screen.Settings.route, "More", Icons.Default.Settings)
     )
     val showNavigation = currentRoute != Screen.Onboarding.route
+    val title = when (currentRoute) {
+        Screen.Home.route -> "ASTRA"
+        Screen.Control.route -> "Track"
+        Screen.Analytics.route -> "Sky & History"
+        Screen.Settings.route -> "More"
+        else -> "ASTRA"
+    }
     Scaffold(
+        topBar = {
+            if (showNavigation) AstraTopBar(title = title, onStop = trackerViewModel::emergencyStop)
+        },
         bottomBar = {
             if (showNavigation) {
-                NavigationBar {
-                    destinations.forEach { (screen, label, icon) ->
-                        NavigationBarItem(
-                            selected = currentRoute == screen.route,
-                            onClick = {
-                                navController.navigate(screen.route) {
-                                    popUpTo(Screen.Home.route) { saveState = true }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            icon = { androidx.compose.material3.Icon(icon, contentDescription = label) },
-                            label = { Text(label) }
-                        )
+                AstraBottomNavigation(
+                    currentRoute = currentRoute,
+                    destinations = destinations.distinctBy { it.label },
+                    onNavigate = { route ->
+                        navController.navigate(route) {
+                            popUpTo(Screen.Home.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
-                }
+                )
             }
         }
     ) { padding ->

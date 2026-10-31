@@ -57,7 +57,7 @@ fun CreateProfileContent(
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Create profile") }
             Text("No account or cloud recovery is used. Keep your PIN private.", style = MaterialTheme.typography.bodySmall)
-            Text("ASTRA 2.0.0-astra", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("ASTRA 2.1.0-astra-ui", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
