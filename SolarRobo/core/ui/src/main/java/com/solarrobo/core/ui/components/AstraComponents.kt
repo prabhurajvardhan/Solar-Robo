@@ -53,11 +53,14 @@ import kotlin.math.cos
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AstraTopBar(title: String, onStop: () -> Unit, modifier: Modifier = Modifier) {
+fun AstraTopBar(title: String, onStop: () -> Unit, onSettings: () -> Unit, modifier: Modifier = Modifier) {
     var confirmStop by remember { mutableStateOf(false) }
     TopAppBar(
         title = { Text(title, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleLarge) },
         actions = {
+            IconButton(onClick = onSettings) {
+                Icon(Icons.Default.Tune, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onSurface)
+            }
             Button(
                 onClick = { confirmStop = true },
                 shape = RoundedCornerShape(24.dp),

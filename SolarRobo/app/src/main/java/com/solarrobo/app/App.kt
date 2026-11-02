@@ -78,7 +78,11 @@ private fun MainSolarRoboContent() {
     }
     Scaffold(
         topBar = {
-            if (showNavigation) AstraTopBar(title = title, onStop = trackerViewModel::emergencyStop)
+            if (showNavigation) AstraTopBar(
+                title = title,
+                onStop = trackerViewModel::emergencyStop,
+                onSettings = { navController.navigate(Screen.Settings.route) { launchSingleTop = true } }
+            )
         },
         bottomBar = {
             if (showNavigation) {

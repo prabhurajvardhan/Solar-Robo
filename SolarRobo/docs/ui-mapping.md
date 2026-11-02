@@ -1,9 +1,10 @@
-# ASTRA UI design mapping
+# ASTRA UI design mapping — completed audit
 
 **Source branch:** `feature/astra-dashboard`  
+**Implementation branch:** `ui/design-upgrade`
 **Design archive:** `Astra-UI.zip`  
 **Mockups found:** 7 PNG images, each approximately 862–863 × 1,822–1,825 px.  
-**Mapping status:** U0 inventory; no product UI code changed yet.
+**Mapping status:** U0 inventory completed; corrective product UI pass implemented and verified by APK build.
 
 ## Design images mapped to the current app
 
@@ -49,3 +50,36 @@ The design archive does **not** provide dedicated images for member sharing/user
 ## Visual observations for U1
 
 The images consistently use a near-white background, dark green primary controls, pale mint cards, large black headings, rounded 20–28 px containers, soft/no heavy shadows, and bottom navigation with a green selected pill. The exact visual treatment will be represented as theme tokens and shared Compose components. Decorative solar-panel/cloud imagery will be kept under the asset budget and will not replace measured/calculated data.
+
+## Conflict decisions
+
+The shell uses four tabs—Home, Track, Sky, and History—because that arrangement appears in most references and preserves a compact phone layout. Predictions remains inside the Sky/analytics surface rather than becoming a fifth business destination. Existing Safety, notifications, settings, security, camera, simulator, Talk, and setup surfaces remain in the route graph. Settings is reachable from the persistent top-bar settings icon and existing in-screen settings actions; History remains a shell destination.
+
+The image-5 Sky layout is the primary Sky composition. Image-4 elements are reused only when the current state can supply them. The Home mockup’s Schedule mode is not implemented as a fake feature: existing tracker actions remain available, while Schedule is explicitly unavailable because no scheduler exists in the current app.
+
+## Feature-parity audit
+
+| Baseline capability | Present/reachable | Current location |
+|---|---|---|
+| PIN, fingerprint, face, lockout, auto-lock | Yes | `LockScreen`, `AuthViewModel`, `SecuritySettingsScreen` |
+| Host/member roles and local access mode | Yes | Auth session and `LocalAccessMode`; viewer/operator gating |
+| Setup wizard and skips | Yes | `Screen.Onboarding` / `OnboardingScreen` |
+| ESP32 status and safety-gated commands | Yes | `RoboDevice`, tracker ViewModel/service, Track screen |
+| Manual East/West, pulse, Follow, Auto, Go flat, Calibrate | Yes | `TrackScreen` and `TrackViewModel` |
+| Foreground tracking service and notification | Yes | `TrackerForegroundService` |
+| Sun position, tilt, pointing error, wind-stow, jam fault | Yes/partial by available state | Tracker runtime, Home/Track; unavailable readings remain unavailable |
+| Sky stats and online/offline forecast switch | Yes | `WeatherViewModel`, `WeatherRuntime`, `InsightsScreen` |
+| Predictions and model status | Yes/partial by available state | Analytics/Insights state; mockup-only metrics are not fabricated |
+| History charts and CSV/PDF/export behavior | Retained where present | Existing insights/history and feature modules |
+| Safety and alerts | Yes | Home safety state, notifications, safety gate |
+| Device page and settings | Retained | Existing settings/device-related components; top-bar settings entry |
+| Backup/restore and data reset paths | Retained where present | Android backup rules and existing settings/data controls |
+| Delete logs/example data | Retained where present | Existing storage/settings flows |
+| STOP on every logged-in screen | Yes | Shared `AstraTopBar` in `MainSolarRoboContent` |
+| Version text on sign-in and About | Yes | Lock/CreateProfile and Settings About; `2.1.0-astra-ui` |
+
+## Palette, assets, and proof
+
+The theme tokens in `core/ui/theme/Color.kt` use the sampled reference values: background/surface `#FFFFFF`, mint `#E8F2EB`, primary `#14532D`, dark primary `#0E3B20`, text `#12251A`, secondary text `#566B5C`, outline `#D6E0D9`, success `#3F7D3A`, warning/sun `#F1B72A`, danger `#B0402F`, dark background `#0B1A12`, and dark primary `#5FBF86`. Five compressed WebP hero crops total approximately 148 KB, below the 5 MB limit.
+
+All seven references are copied under `docs/ui-proof/reference`. This sandbox has no `adb`, emulator, or physical device, so previous-app and redesigned-running-app screenshots were not fabricated. Runtime screenshot comparison, real-hardware biometric behavior, two-phone member sharing, and 4 GB-device animation performance remain untested. See `docs/ASTRA_VISUAL_COMPARISON.md` for the per-design status table.

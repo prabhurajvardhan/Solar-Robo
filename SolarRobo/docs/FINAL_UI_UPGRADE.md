@@ -1,34 +1,8 @@
-# ASTRA UI upgrade verification — corrective pass
 
-## Delivery
+## Follow-up acceptance details
 
-- **Branch:** `ui/design-upgrade`
-- **Base branch:** `feature/astra-dashboard`
-- **Investigation commit:** `61378e5`
-- **Corrective pass:** visible Home, Track, shell/navigation, and sign-in compositions now use reference-led layouts and optimized hero resources.
-- **Design images:** 7 reference PNGs copied under [`docs/ui-proof/reference`](ui-proof/reference).
-- **Runtime proof:** no `adb`, emulator, or physical Android device exists in this sandbox. Previous-app and redesigned-running-app screenshots are therefore not claimed. See [`docs/ASTRA_VISUAL_COMPARISON.md`](ASTRA_VISUAL_COMPARISON.md).
-- **APK:** `app/build/outputs/apk/debug/app-debug.apk`
-- **APK size:** 78,410,975 bytes
-- **APK SHA-256:** `e0a1f7afc4b0abf444eebbc1ffc43c438f54cc1358712b740954018cdccb9c6b`
-- **New bundled UI assets:** 148 KB total, five compressed WebP hero crops; below the 5 MB limit.
+The start branch carried `versionCode = 2` and `versionName = "2.0.0-astra"`; this branch carries `versionCode = 3` and `versionName = "2.1.0-astra-ui"`. The new version is visible on sign-in/create-profile and Settings About.
 
-## Verification commands
+The four-tab decision is final: Home, Track, Sky, and History. Predictions stays within the Sky/analytics surface. Settings and the existing auxiliary surfaces remain reachable from the new top-bar settings icon and existing routes; no feature was removed or hidden. The Home mockup’s Schedule control is not treated as implemented because the current app has no scheduler. Sky image 5 is the primary layout; image 4 contributes only compatible Sky/current-condition elements.
 
-| Command | Result | Details |
-|---|---|---|
-| `./gradlew assembleDebug` | **PASS** | `BUILD SUCCESSFUL` after the corrective UI changes and packaged resources. |
-| `./gradlew testDebugUnitTest` | **FAIL — existing failures** | Two existing `core:ai` tests fail: `OnDeviceSolarAiEngineTest.unknownQuestionsRemainBoundedAndNonActuating` and `respondsToSolarTopicsWithoutNetwork`. No tests were removed or weakened. |
-| `./gradlew lintDebug` | **FAIL — existing module errors** | Lint stops in `core:camera` with 40 errors, first at `CameraXFrameSource.kt:73` for a missing opt-in annotation. |
-
-## Investigation result
-
-The launcher and route wiring were correct: `MainActivity` calls `SolarRoboApp`, and `AppNavHost` imports the live `app/presentation` Home, Track, and Insights screens. The prior redesign was visually insufficient because it changed theme/shell/cards but left the real screen compositions mostly as text/card stacks and did not implement the reference hero, chart, segmented-control, and navigation structures. The investigation is documented in [`docs/ASTRA_UI_INVESTIGATION.md`](ASTRA_UI_INVESTIGATION.md).
-
-## Corrective implementation
-
-The logged-in shell now uses a light ASTRA header with a visible red STOP pill and four-item Home/Track/Sky/History navigation. Home now uses the reference-led solar hero, Clean Energy/Smarter Motion hierarchy, real-data metric tiles, sun-position card, segmented action treatment, panel-position slider, and source tags. Track now uses the reference-led live camera hero, live/offline status, ideal-versus-actual chart card, real tracker metric tiles, and retains the existing camera, calibration, follow, jog, E-stop, and safety handlers. Sign-in now uses the supplied optimized solar hero with the existing local six-digit PIN and BiometricPrompt behavior.
-
-## Runtime screenshot status
-
-All seven reference images are present. No previous or redesigned running-app screenshot is presented because the sandbox has no Android runtime tooling (`adb`/emulator/device), and the previous APK was not retained. The comparison report explicitly marks each runtime screenshot as **Not captured**; no preview or mockup copy is being passed off as running-app proof.
+The full feature-parity table is in [`docs/ui-mapping.md`](ui-mapping.md). The seven-design status is: Sign-in **Partial** (implemented and built; runtime screenshot/biometric hardware not tested); Home **Partial** (implemented and built; live hardware values/runtime screenshot not tested); Track **Partial** (implemented and built; camera/service runtime not tested); Sky live **Partial** (existing state-backed surface; online/offline runtime not tested); Sky detail **Partial** (mockup-only values intentionally omitted); Predictions **Partial** (real state retained; mockup-only accuracy/learning values intentionally omitted); Predictions alternate navigation **Partial** (four-tab decision applied; Predictions remains an in-screen state). No design is marked Done solely from source code without runtime screenshot proof.
