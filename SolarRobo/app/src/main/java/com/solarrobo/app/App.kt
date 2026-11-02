@@ -65,14 +65,14 @@ private fun MainSolarRoboContent() {
         AstraDestination(Screen.Home.route, "Home", Icons.Default.Home),
         AstraDestination(Screen.Control.route, "Track", Icons.Default.TrackChanges),
         AstraDestination(Screen.Analytics.route, "Sky", Icons.Default.Cloud),
-        AstraDestination(Screen.Analytics.route, "History", Icons.Default.History),
-        AstraDestination(Screen.Settings.route, "More", Icons.Default.Settings)
+        AstraDestination(Screen.History.route, "History", Icons.Default.History)
     )
     val showNavigation = currentRoute != Screen.Onboarding.route
     val title = when (currentRoute) {
         Screen.Home.route -> "ASTRA"
         Screen.Control.route -> "Track"
         Screen.Analytics.route -> "Sky & History"
+        Screen.History.route -> "History"
         Screen.Settings.route -> "More"
         else -> "ASTRA"
     }

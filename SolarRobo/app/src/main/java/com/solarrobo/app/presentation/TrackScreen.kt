@@ -27,6 +27,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.tooling.preview.Preview
@@ -42,6 +47,11 @@ import com.solarrobo.core.ui.theme.LocalAccessMode
 import com.solarrobo.core.ui.components.ViewerAccessTooltip
 import com.solarrobo.app.service.TrackerForegroundService
 import com.solarrobo.core.ui.theme.SolarRoboTheme
+import com.solarrobo.app.R
+import com.solarrobo.core.ui.components.AstraCard
+import com.solarrobo.core.ui.components.MetricTile
+import com.solarrobo.core.ui.components.SectionHeader
+import com.solarrobo.core.ui.components.SourceTag
 
 @Composable
 fun TrackScreen(viewModel: TrackViewModel, modifier: Modifier = Modifier, onSetup: () -> Unit = {}) {
@@ -74,7 +84,14 @@ fun TrackScreen(viewModel: TrackViewModel, modifier: Modifier = Modifier, onSetu
             modifier.fillMaxSize().padding(insets).verticalScroll(rememberScrollState()).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Text("Track", style = MaterialTheme.typography.headlineMedium)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Text("Track", style = MaterialTheme.typography.headlineLarge)
+                Text(if (connected) "● Live" else "○ Offline", color = if (connected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
+            }
+            Box(Modifier.fillMaxWidth().height(250.dp).clip(RoundedCornerShape(24.dp))) {
+                Image(painterResource(R.drawable.astra_track_hero), "Live tracking camera view", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                Text("LIVE TRACKING", Modifier.padding(16.dp), color = androidx.compose.ui.graphics.Color.White, style = MaterialTheme.typography.titleMedium)
+            }
             if (!isOperator) Text("Viewer mode · operator controls are disabled. Unlock with your local PIN to make changes.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Card(colors = CardDefaults.cardColors(containerColor = if (connected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer)) {
                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -91,7 +108,22 @@ fun TrackScreen(viewModel: TrackViewModel, modifier: Modifier = Modifier, onSetu
             }
             state.message?.let { Text(it, color = if (state.calibrationStep?.complete == false) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant) }
             val tracker = state.tracker
-            Text("Panel angle: ${tracker?.estimatedPanelAngleDeg?.let { "%.1f° (estimate)".format(it) } ?: "Not available"}")
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                MetricTile("Ideal tilt", tracker?.targetAngleDeg?.let { "%.1f°".format(it) } ?: "Not measured", "Calculated", Modifier.weight(1f))
+                MetricTile("Actual tilt", tracker?.estimatedPanelAngleDeg?.let { "%.1f°".format(it) } ?: "Not measured", "Estimate", Modifier.weight(1f))
+            }
+            AstraCard {
+                SectionHeader("Ideal vs Actual Tilt", "Live tracker state")
+                val idealColor = MaterialTheme.colorScheme.primary
+                val actualColor = MaterialTheme.colorScheme.tertiary
+                Canvas(Modifier.fillMaxWidth().height(100.dp)) {
+                    val ideal = tracker?.targetAngleDeg?.coerceIn(0f, 90f) ?: 0f
+                    val actual = tracker?.estimatedPanelAngleDeg?.coerceIn(0f, 90f) ?: 0f
+                    drawLine(idealColor, Offset(0f, size.height * (1f - ideal / 90f)), Offset(size.width, size.height * (1f - ideal / 90f)), strokeWidth = 5.dp.toPx())
+                    drawLine(actualColor, Offset(0f, size.height * (1f - actual / 90f)), Offset(size.width, size.height * (1f - actual / 90f)), strokeWidth = 5.dp.toPx())
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { SourceTag("Ideal · Calculated"); SourceTag("Actual · Estimate") }
+            }
             Text("Single-axis target: ${tracker?.targetAngleDeg?.let { "%.1f° (calculated)".format(it) } ?: "Not available"}")
             Text("Angle source: ${tracker?.angleSource?.name?.replace('_', ' ') ?: "No tracker service"}")
             Text(state.cameraExposureReport, style = MaterialTheme.typography.bodySmall)

@@ -31,6 +31,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,13 +56,19 @@ import kotlin.math.cos
 fun AstraTopBar(title: String, onStop: () -> Unit, modifier: Modifier = Modifier) {
     var confirmStop by remember { mutableStateOf(false) }
     TopAppBar(
-        title = { Text(title, color = MaterialTheme.colorScheme.onPrimary) },
+        title = { Text(title, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleLarge) },
         actions = {
-            IconButton(onClick = { confirmStop = true }) {
-                Icon(Icons.Default.StopCircle, contentDescription = "STOP", tint = AstraDanger)
+            Button(
+                onClick = { confirmStop = true },
+                shape = RoundedCornerShape(24.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = AstraDanger),
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+            ) {
+                Icon(Icons.Default.StopCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                Text("STOP", modifier = Modifier.padding(start = 5.dp))
             }
         },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = AstraPrimary),
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
         modifier = modifier
     )
     if (confirmStop) {

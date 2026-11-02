@@ -2,6 +2,7 @@ package com.solarrobo.feature.auth.presentation
 
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,6 +34,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -42,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solarrobo.core.ui.theme.AstraMint
 import com.solarrobo.core.ui.theme.AstraPrimary
 import com.solarrobo.core.ui.theme.SolarRoboTheme
+import com.solarrobo.feature.auth.R
 
 @Composable
 fun LockScreen(viewModel: AuthViewModel, modifier: Modifier = Modifier) {
@@ -152,6 +156,12 @@ private fun PinKey(label: String, enabled: Boolean, onClick: () -> Unit) {
 @Composable
 private fun AstraAuthHero() {
     Box(Modifier.fillMaxWidth().height(190.dp)) {
+        Image(
+            painter = painterResource(R.drawable.astra_auth_hero),
+            contentDescription = "ASTRA solar tracker",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
         Canvas(Modifier.fillMaxSize()) {
             drawRect(Brush.verticalGradient(listOf(Color(0xFFEAF7F0), Color.White)))
             val center = Offset(size.width * .76f, size.height * .24f)

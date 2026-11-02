@@ -10,6 +10,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.material3.Slider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Settings
@@ -22,9 +26,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -35,6 +42,10 @@ import com.solarrobo.core.ui.components.SolarPanelHero
 import com.solarrobo.core.ui.theme.LocalAccessMode
 import com.solarrobo.core.ui.theme.SolarRoboTheme
 import com.solarrobo.core.weather.AdvisoryAction
+import com.solarrobo.app.R
+import com.solarrobo.core.ui.components.AstraCard
+import com.solarrobo.core.ui.components.SectionHeader
+import com.solarrobo.core.ui.components.SourceTag
 
 @Composable
 fun HomeScreen(
@@ -78,17 +89,49 @@ fun HomeScreenContent(
         modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Column {
-                Text("ASTRA", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                Text("Dashboard", style = MaterialTheme.typography.headlineMedium)
+                Text("ASTRA", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
+                Text("AI solar tracker", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Text(if (mode == AccessMode.OPERATOR) "Operator" else "Viewer", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        SolarPanelHero(
-            panelAngleDeg = state.panelAngleDeg,
-            status = if (state.isConnected) "Tracking active · local controller connected" else "Waiting for local controller link"
-        )
+        Image(painterResource(R.drawable.astra_home_hero), "ASTRA solar panel", Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)), contentScale = ContentScale.Crop)
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("Clean Energy", style = MaterialTheme.typography.headlineLarge)
+            Text("Smarter Motion", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
+            Text("AI powered solar tracking for maximum energy, always.", style = MaterialTheme.typography.bodyLarge)
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            MetricTile("Current Power", "Not measured", "Not measured", Modifier.weight(1f))
+            MetricTile("Today's Energy", "Not measured", "Not measured", Modifier.weight(1f))
+        }
+        AstraCard {
+            SectionHeader("Sun Position", if (state.isConnected) "Live" else "Not measured")
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                    Text(state.sunAzimuthDeg?.let { "%.0f°".format(it) } ?: "Not measured", style = MaterialTheme.typography.headlineMedium)
+                    Text("Azimuth", style = MaterialTheme.typography.bodySmall)
+                    SourceTag(if (state.sunAzimuthDeg == null) "Not measured" else "Calculated")
+                }
+                Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                    Text(state.sunElevationDeg?.let { "%.0f°".format(it) } ?: "Not measured", style = MaterialTheme.typography.headlineMedium)
+                    Text("Elevation", style = MaterialTheme.typography.bodySmall)
+                    SourceTag(if (state.sunElevationDeg == null) "Not measured" else "Calculated")
+                }
+            }
+        }
+        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.surfaceVariant).padding(4.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+            Button(onClick = { onNavigateToRoute("track") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(20.dp)) { Text("Auto Track") }
+            OutlinedButton(onClick = { onNavigateToRoute("track") }, modifier = Modifier.weight(1f)) { Text("Manual") }
+            OutlinedButton(onClick = { onNavigateToRoute("settings") }, modifier = Modifier.weight(1f)) { Text("Schedule") }
+        }
+        AstraCard {
+            SectionHeader("Panel Position", "Real tracker state")
+            Text(state.panelAngleDeg?.let { "%.1f°".format(it) } ?: "Not measured", style = MaterialTheme.typography.headlineMedium)
+            Slider(value = (state.panelAngleDeg ?: 0f).coerceIn(0f, 90f), onValueChange = {}, enabled = false, modifier = Modifier.fillMaxWidth())
+            SourceTag(if (state.panelAngleDeg == null) "Not measured" else "Estimate")
+        }
         if (state.isLoading) {
             Card(Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(20.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
