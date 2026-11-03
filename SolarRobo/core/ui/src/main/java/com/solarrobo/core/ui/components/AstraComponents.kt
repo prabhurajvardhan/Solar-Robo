@@ -1,10 +1,12 @@
 package com.solarrobo.core.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -27,7 +29,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -41,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.solarrobo.core.ui.theme.AstraDanger
@@ -53,7 +56,13 @@ import kotlin.math.cos
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AstraTopBar(title: String, onStop: () -> Unit, onSettings: () -> Unit, modifier: Modifier = Modifier) {
+fun AstraTopBar(
+    title: String,
+    onStop: () -> Unit,
+    onSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+    statusText: String? = null
+) {
     var confirmStop by remember { mutableStateOf(false) }
     TopAppBar(
         title = { Text(title, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleLarge) },
@@ -61,14 +70,27 @@ fun AstraTopBar(title: String, onStop: () -> Unit, onSettings: () -> Unit, modif
             IconButton(onClick = onSettings) {
                 Icon(Icons.Default.Tune, contentDescription = "Settings", tint = MaterialTheme.colorScheme.onSurface)
             }
-            Button(
-                onClick = { confirmStop = true },
-                shape = RoundedCornerShape(24.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = AstraDanger),
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
-            ) {
-                Icon(Icons.Default.StopCircle, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text("STOP", modifier = Modifier.padding(start = 5.dp))
+            if (statusText == null) {
+                StopAction { confirmStop = true }
+            } else {
+                Surface(
+                    shape = RoundedCornerShape(28.dp),
+                    color = AstraMint,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, AstraOutline)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(start = 12.dp, end = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "● $statusText",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (statusText == "Live") AstraPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        StopAction { confirmStop = true }
+                    }
+                }
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
@@ -84,6 +106,25 @@ fun AstraTopBar(title: String, onStop: () -> Unit, onSettings: () -> Unit, modif
             },
             dismissButton = { OutlinedButton(onClick = { confirmStop = false }) { Text("Cancel") } }
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AstraTopBarPreview() {
+    SolarRoboTheme { AstraTopBar("Track", {}, {}, statusText = "Live") }
+}
+
+@Composable
+private fun StopAction(onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        shape = RoundedCornerShape(24.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = AstraDanger),
+        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+    ) {
+        Icon(Icons.Default.StopCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+        Text("STOP", modifier = Modifier.padding(start = 5.dp))
     }
 }
 
@@ -133,6 +174,43 @@ fun SectionHeader(title: String, subtitle: String? = null, modifier: Modifier = 
         Text(title, style = MaterialTheme.typography.titleLarge)
         subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+fun AstraSegmentedControl(
+    options: List<String>,
+    selectedIndex: Int,
+    onSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth().background(AstraMint, RoundedCornerShape(28.dp)).padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        options.forEachIndexed { index, label ->
+            Surface(
+                onClick = { onSelected(index) },
+                modifier = Modifier.weight(1f).height(42.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = if (index == selectedIndex) AstraPrimary else Color.Transparent
+            ) {
+                androidx.compose.foundation.layout.Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (index == selectedIndex) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AstraSegmentedControlPreview() {
+    SolarRoboTheme { AstraSegmentedControl(listOf("Sky", "Predictions"), 0, {}) }
 }
 
 @Composable
@@ -189,27 +267,51 @@ fun AstraBottomNavigation(
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    NavigationBar(
-        modifier = modifier,
-        containerColor = MaterialTheme.colorScheme.surface,
-        tonalElevation = 0.dp,
-        contentColor = MaterialTheme.colorScheme.onSurface
+    Surface(
+        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(26.dp),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 6.dp,
+        border = androidx.compose.foundation.BorderStroke(1.dp, AstraOutline)
     ) {
-        destinations.forEach { destination ->
-            NavigationBarItem(
-                selected = currentRoute == destination.route,
-                onClick = { onNavigate(destination.route) },
-                icon = { Icon(destination.icon, contentDescription = destination.label) },
-                label = { Text(destination.label) },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = MaterialTheme.colorScheme.onPrimary,
-                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                    indicatorColor = MaterialTheme.colorScheme.primary,
-                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+        NavigationBar(
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ) {
+            destinations.forEach { destination ->
+                NavigationBarItem(
+                    selected = currentRoute == destination.route,
+                    onClick = { onNavigate(destination.route) },
+                    icon = { Icon(destination.icon, contentDescription = destination.label) },
+                    label = { Text(destination.label) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                        indicatorColor = MaterialTheme.colorScheme.primary,
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 )
-            )
+            }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AstraBottomNavigationPreview() {
+    SolarRoboTheme {
+        AstraBottomNavigation(
+            currentRoute = "today",
+            destinations = listOf(
+                AstraDestination("today", "Home", Icons.Default.Home),
+                AstraDestination("track", "Track", Icons.Default.TrackChanges),
+                AstraDestination("insights", "Sky", Icons.Default.Cloud),
+                AstraDestination("history", "History", Icons.Default.Insights)
+            ),
+            onNavigate = {}
+        )
     }
 }
 
@@ -219,6 +321,7 @@ private fun AstraComponentsPreview() {
     SolarRoboTheme {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SectionHeader("Sun position", "Calculated from location and time")
+            AstraSegmentedControl(listOf("Sky", "Predictions"), 0, {})
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 MetricTile("Elevation", "Not measured", "Not measured", Modifier.weight(1f))
                 MetricTile("Azimuth", "180°", "Calculated", Modifier.weight(1f))

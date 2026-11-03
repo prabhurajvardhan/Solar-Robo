@@ -60,6 +60,7 @@ private fun MainSolarRoboContent() {
     val navController = rememberNavController()
     hiltViewModel<SettingsViewModel>()
     val trackerViewModel: TrackViewModel = hiltViewModel()
+    val trackerState by trackerViewModel.uiState.collectAsStateWithLifecycle()
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val destinations = listOf(
         AstraDestination(Screen.Home.route, "Home", Icons.Default.Home),
@@ -69,9 +70,9 @@ private fun MainSolarRoboContent() {
     )
     val showNavigation = currentRoute != Screen.Onboarding.route
     val title = when (currentRoute) {
-        Screen.Home.route -> "ASTRA"
+        Screen.Home.route -> "Home"
         Screen.Control.route -> "Track"
-        Screen.Analytics.route -> "Sky & History"
+        Screen.Analytics.route -> "Sky"
         Screen.History.route -> "History"
         Screen.Settings.route -> "More"
         else -> "ASTRA"
@@ -81,7 +82,10 @@ private fun MainSolarRoboContent() {
             if (showNavigation) AstraTopBar(
                 title = title,
                 onStop = trackerViewModel::emergencyStop,
-                onSettings = { navController.navigate(Screen.Settings.route) { launchSingleTop = true } }
+                onSettings = { navController.navigate(Screen.Settings.route) { launchSingleTop = true } },
+                statusText = if (currentRoute == Screen.Control.route) {
+                    if (trackerState.snapshot?.connected == true) "Live" else "Offline"
+                } else null
             )
         },
         bottomBar = {

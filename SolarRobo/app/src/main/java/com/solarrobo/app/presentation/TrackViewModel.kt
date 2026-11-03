@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.camera.view.PreviewView
 import com.solarrobo.app.di.TrackerRuntimeHolder
 import com.solarrobo.core.camera.CameraXFrameSource
+import com.solarrobo.core.camera.CameraStatus
 import com.solarrobo.core.contracts.CalibrationStep
 import com.solarrobo.core.contracts.RoboCommand
 import com.solarrobo.core.contracts.RoboSnapshot
@@ -34,6 +35,7 @@ import kotlinx.coroutines.launch
 data class TrackUiState(
     val snapshot: RoboSnapshot? = null,
     val tracker: TrackerSnapshot? = null,
+    val cameraStatus: CameraStatus = CameraStatus.IDLE,
     val cameraExposureReport: String = "Camera exposure controls not checked",
     val calibrationStep: CalibrationStep? = null,
     val emergencyLatched: Boolean = false,
@@ -70,6 +72,9 @@ class TrackViewModel @Inject constructor(
         }
         viewModelScope.launch {
             cameraSource.exposureControlReport.collect { report -> controls.update { it.copy(cameraExposureReport = report) } }
+        }
+        viewModelScope.launch {
+            cameraSource.status.collect { status -> controls.update { it.copy(cameraStatus = status) } }
         }
     }
 

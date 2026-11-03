@@ -2,6 +2,7 @@ package com.solarrobo.app.presentation
 
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.viewinterop.AndroidView
@@ -27,27 +28,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.solarrobo.core.contracts.AccessMode
 import com.solarrobo.core.contracts.LightFollowPhase
+import com.solarrobo.core.camera.CameraStatus
 import com.solarrobo.core.ui.theme.LocalAccessMode
 import com.solarrobo.core.ui.components.ViewerAccessTooltip
 import com.solarrobo.app.service.TrackerForegroundService
 import com.solarrobo.core.ui.theme.SolarRoboTheme
-import com.solarrobo.app.R
 import com.solarrobo.core.ui.components.AstraCard
 import com.solarrobo.core.ui.components.MetricTile
 import com.solarrobo.core.ui.components.SectionHeader
@@ -62,10 +61,11 @@ fun TrackScreen(viewModel: TrackViewModel, modifier: Modifier = Modifier, onSetu
     val previewView = remember(context) { PreviewView(context) }
     val connected = state.snapshot?.connected == true
     val active = state.tracker != null
+    val latestActive by rememberUpdatedState(active)
     DisposableEffect(lifecycleOwner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_START -> if (active) viewModel.bindLightFollowPreview(previewView)
+                Lifecycle.Event.ON_START -> if (latestActive) viewModel.bindLightFollowPreview(previewView)
                 Lifecycle.Event.ON_STOP, Lifecycle.Event.ON_DESTROY -> {
                     viewModel.stopLightFollow()
                     viewModel.clearLightFollowPreview()
@@ -74,9 +74,20 @@ fun TrackScreen(viewModel: TrackViewModel, modifier: Modifier = Modifier, onSetu
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
+        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED) && active) {
+            viewModel.bindLightFollowPreview(previewView)
+        }
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
             viewModel.stopLightFollow()
+            viewModel.clearLightFollowPreview()
+        }
+    }
+    LaunchedEffect(active, previewView) {
+        if (active && lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+            viewModel.bindLightFollowPreview(previewView)
+        } else {
+            viewModel.clearLightFollowPreview()
         }
     }
     Scaffold { insets ->
@@ -84,13 +95,49 @@ fun TrackScreen(viewModel: TrackViewModel, modifier: Modifier = Modifier, onSetu
             modifier.fillMaxSize().padding(insets).verticalScroll(rememberScrollState()).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                Text("Track", style = MaterialTheme.typography.headlineLarge)
-                Text(if (connected) "● Live" else "○ Offline", color = if (connected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
-            }
             Box(Modifier.fillMaxWidth().height(250.dp).clip(RoundedCornerShape(24.dp))) {
-                Image(painterResource(R.drawable.astra_track_hero), "Live tracking camera view", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-                Text("LIVE TRACKING", Modifier.padding(16.dp), color = androidx.compose.ui.graphics.Color.White, style = MaterialTheme.typography.titleMedium)
+                AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
+                if (state.cameraStatus != CameraStatus.STREAMING) {
+                    Box(
+                        Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.62f)),
+                        contentAlignment = androidx.compose.ui.Alignment.Center
+                    ) {
+                        Text(
+                            text = when {
+                                !active -> "Start camera tracking to view the live feed"
+                                state.cameraStatus == CameraStatus.ERROR || state.cameraStatus == CameraStatus.UNAVAILABLE -> "Camera feed unavailable"
+                                else -> "Waiting for camera frames…"
+                            },
+                            color = androidx.compose.ui.graphics.Color.White,
+                            modifier = Modifier.padding(horizontal = 24.dp)
+                        )
+                    }
+                }
+                Text(
+                    text = when (state.cameraStatus) {
+                        CameraStatus.STREAMING -> "● LIVE CAMERA"
+                        CameraStatus.READY -> "CAMERA READY"
+                        CameraStatus.ERROR, CameraStatus.UNAVAILABLE -> "CAMERA UNAVAILABLE"
+                        CameraStatus.IDLE -> "CAMERA OFFLINE"
+                    },
+                    modifier = Modifier.align(androidx.compose.ui.Alignment.TopStart).padding(14.dp)
+                        .clip(RoundedCornerShape(18.dp)).background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.6f)).padding(horizontal = 12.dp, vertical = 8.dp),
+                    color = androidx.compose.ui.graphics.Color.White,
+                    style = MaterialTheme.typography.labelLarge
+                )
+                val lightX = state.lightFollow.lightX
+                val lightY = state.lightFollow.lightY
+                if (lightX != null && lightY != null) {
+                    val markerColor = MaterialTheme.colorScheme.error
+                    Canvas(Modifier.fillMaxSize()) {
+                        drawCircle(
+                            color = markerColor,
+                            radius = 12.dp.toPx(),
+                            center = Offset(lightX / 320f * size.width, lightY / 240f * size.height),
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
+                        )
+                    }
+                }
             }
             if (!isOperator) Text("Viewer mode · operator controls are disabled. Unlock with your local PIN to make changes.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             Card(colors = CardDefaults.cardColors(containerColor = if (connected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.errorContainer)) {
@@ -155,27 +202,7 @@ fun TrackScreen(viewModel: TrackViewModel, modifier: Modifier = Modifier, onSetu
                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Light-follow demo", style = MaterialTheme.typography.titleMedium)
                     Text("Follows a bright, small camera spot using deterministic pixel feedback. This is a torch/demo mode, not solar tracking.", style = MaterialTheme.typography.bodySmall)
-                    LaunchedEffect(previewView, active) { if (active) viewModel.bindLightFollowPreview(previewView) }
-                    DisposableEffect(previewView) {
-                        onDispose { viewModel.clearLightFollowPreview() }
-                    }
-                    Box(Modifier.fillMaxWidth().height(200.dp)) {
-                        AndroidView(factory = { previewView }, modifier = Modifier.fillMaxSize())
-                        val crosshairColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        val markerColor = MaterialTheme.colorScheme.error
-                        Canvas(Modifier.fillMaxSize()) {
-                            val center = Offset(size.width / 2f, size.height / 2f)
-                            drawLine(crosshairColor, Offset(center.x - 14.dp.toPx(), center.y), Offset(center.x + 14.dp.toPx(), center.y), strokeWidth = 2.dp.toPx())
-                            drawLine(crosshairColor, Offset(center.x, center.y - 14.dp.toPx()), Offset(center.x, center.y + 14.dp.toPx()), strokeWidth = 2.dp.toPx())
-                            val lx = state.lightFollow.lightX
-                            val ly = state.lightFollow.lightY
-                            if (lx != null && ly != null) {
-                                val sx = lx / 320f * size.width
-                                val sy = ly / 240f * size.height
-                                drawCircle(markerColor, radius = 10.dp.toPx(), center = Offset(sx, sy), style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()))
-                            }
-                        }
-                    }
+                    Text("The shared camera preview above shows the live local feed when tracking is running.", style = MaterialTheme.typography.bodySmall)
                     Text("State: ${state.lightFollow.phase.displayName()}", style = MaterialTheme.typography.titleLarge)
                     Text("Spot: ${state.lightFollow.lightX?.let { "x %.1f px".format(it) } ?: "Not detected"} · error: ${state.lightFollow.errorPx?.let { "%.1f px".format(it) } ?: "Not measured"} · ${state.lightFollow.errorDeg?.let { "%.2f°".format(it) } ?: "Not measured"}")
                     Text("Estimated panel angle: ${tracker?.estimatedPanelAngleDeg?.let { "%.1f°".format(it) } ?: "Not available"} · moves: ${state.lightFollow.moves}")

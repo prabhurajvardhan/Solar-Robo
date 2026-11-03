@@ -57,7 +57,7 @@ fun AppNavHost(
             InsightsScreen(viewModel = hiltViewModel(), weatherViewModel = hiltViewModel())
         }
         composable(Screen.History.route) {
-            InsightsScreen(viewModel = hiltViewModel(), weatherViewModel = hiltViewModel())
+            InsightsScreen(viewModel = hiltViewModel(), weatherViewModel = hiltViewModel(), historyOnly = true)
         }
         composable(Screen.Settings.route) {
             SettingsScreen(viewModel = hiltViewModel(), onNavigateToSecurity = { navController.navigate(Screen.Security.route) })

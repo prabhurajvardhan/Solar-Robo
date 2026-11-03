@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.background
 import androidx.compose.ui.draw.clip
 import androidx.compose.material3.Slider
 import androidx.compose.material.icons.Icons
@@ -121,16 +120,15 @@ fun HomeScreenContent(
                 }
             }
         }
-        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.surfaceVariant).padding(4.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-            Button(onClick = { onNavigateToRoute("track") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(20.dp)) { Text("Auto Track") }
-            OutlinedButton(onClick = { onNavigateToRoute("track") }, modifier = Modifier.weight(1f)) { Text("Manual") }
-            OutlinedButton(onClick = { onNavigateToRoute("settings") }, modifier = Modifier.weight(1f)) { Text("Schedule") }
-        }
         AstraCard {
             SectionHeader("Panel Position", "Real tracker state")
             Text(state.panelAngleDeg?.let { "%.1f°".format(it) } ?: "Not measured", style = MaterialTheme.typography.headlineMedium)
             Slider(value = (state.panelAngleDeg ?: 0f).coerceIn(0f, 90f), onValueChange = {}, enabled = false, modifier = Modifier.fillMaxWidth())
             SourceTag(if (state.panelAngleDeg == null) "Not measured" else "Estimate")
+        }
+        Button(onClick = { onNavigateToRoute("track") }, modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Default.TrackChanges, contentDescription = null)
+            Text(" Open tracking controls")
         }
         if (state.isLoading) {
             Card(Modifier.fillMaxWidth()) {
@@ -198,10 +196,6 @@ fun HomeScreenContent(
                 Icon(Icons.Default.Settings, contentDescription = null)
                 Text(" Settings")
             }
-        }
-        OutlinedButton(onClick = { onNavigateToRoute("track") }, modifier = Modifier.fillMaxWidth()) {
-            Icon(Icons.Default.TrackChanges, contentDescription = null)
-            Text(" Open tracker controls")
         }
         OutlinedButton(onClick = onNavigateToSimulator, modifier = Modifier.fillMaxWidth()) { Text("Open simulator · simulated values") }
         Text("ASTRA 2.1.0-astra-ui · values are local, calculated, camera-estimated, or explicitly Not measured.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
