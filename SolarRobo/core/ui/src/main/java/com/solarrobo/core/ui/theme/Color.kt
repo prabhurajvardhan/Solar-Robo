@@ -2,29 +2,51 @@ package com.solarrobo.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// ASTRA palette: half-white surfaces + olive green. Every text/background pair below is >= 4.5:1 (verified by ContrastTest).
-val HalfWhite       = Color(0xFFF6F5EC)   // app background
-val HalfWhiteRaised = Color(0xFFFBFAF4)   // cards / surfaces
-val HalfWhiteDeep   = Color(0xFFECEBDD)   // surface variant, chips, dividers
-val Olive           = Color(0xFF5B6B2E)   // primary
-val OliveDark       = Color(0xFF3F4A1E)   // pressed / dark container
-val OliveTint       = Color(0xFFDDE5BE)   // primary container
-val OliveInk        = Color(0xFF1D2506)   // on primary container
-val OliveMuted      = Color(0xFF6E7550)   // secondary
-val OliveMutedTint  = Color(0xFFE4E8CF)   // secondary container
-val InkPrimary      = Color(0xFF1B1C16)   // main text
-val InkSecondary    = Color(0xFF4A4C3C)   // secondary text
-val Outline         = Color(0xFF8A8C78)
-val SunAmber        = Color(0xFF8A6100)   // tertiary, used sparingly
-val SunAmberTint    = Color(0xFFF3E3B8)
-val ErrorRed        = Color(0xFFB3261E)
-val ErrorTint       = Color(0xFFF9DEDC)
-val SuccessGreen    = Color(0xFF4C6B1F)
-// dark theme
-val DarkBg          = Color(0xFF14160F)
-val DarkSurfaceNew  = Color(0xFF1B1E14)
-val DarkPrimary     = Color(0xFFB7C77A)
-val DarkOnPrimary   = Color(0xFF1F2700)
-val DarkPrimaryCont = Color(0xFF3F4A1E)
-val DarkOnSurface   = Color(0xFFE6E8D8)
-val DarkOnSurfaceV  = Color(0xFFC2C5AE)
+// ASTRA UI tokens sampled from the supplied mockups.
+val AstraBackground = Color(0xFFFFFFFF)
+val AstraSurface = Color(0xFFFFFFFF)
+val AstraMint = Color(0xFFE8F2EB)
+val AstraMintStrong = Color(0xFFD5E9DC)
+val AstraPrimary = Color(0xFF14532D)
+val AstraPrimaryDark = Color(0xFF0E3B20)
+val AstraText = Color(0xFF12251A)
+val AstraTextSecondary = Color(0xFF566B5C)
+val AstraOutline = Color(0xFFD6E0D9)
+val AstraSuccess = Color(0xFF3F7D3A)
+val AstraWarning = Color(0xFFB7791F)
+val AstraDanger = Color(0xFFB0402F)
+val AstraDangerContainer = Color(0xFFFFE9E5)
+val AstraSun = Color(0xFFF1B72A)
+
+val AstraDarkBackground = Color(0xFF0B1A12)
+val AstraDarkSurface = Color(0xFF12251A)
+val AstraDarkPrimary = Color(0xFF5FBF86)
+val AstraDarkText = Color(0xFFEAF3EC)
+val AstraDarkTextSecondary = Color(0xFF9DB5A4)
+val AstraDarkOutline = Color(0xFF25402F)
+
+// Compatibility aliases used by existing feature modules.
+val HalfWhite = AstraBackground
+val HalfWhiteRaised = AstraSurface
+val HalfWhiteDeep = AstraMint
+val Olive = AstraPrimary
+val OliveDark = AstraPrimaryDark
+val OliveTint = AstraMintStrong
+val OliveInk = AstraText
+val OliveMuted = AstraTextSecondary
+val OliveMutedTint = AstraMint
+val InkPrimary = AstraText
+val InkSecondary = AstraTextSecondary
+val Outline = AstraOutline
+val SunAmber = AstraWarning
+val SunAmberTint = Color(0xFFFFF4D6)
+val ErrorRed = AstraDanger
+val ErrorTint = AstraDangerContainer
+val SuccessGreen = AstraSuccess
+val DarkBg = AstraDarkBackground
+val DarkSurfaceNew = AstraDarkSurface
+val DarkPrimary = AstraDarkPrimary
+val DarkOnPrimary = AstraDarkBackground
+val DarkPrimaryCont = Color(0xFF1C4930)
+val DarkOnSurface = AstraDarkText
+val DarkOnSurfaceV = AstraDarkTextSecondary

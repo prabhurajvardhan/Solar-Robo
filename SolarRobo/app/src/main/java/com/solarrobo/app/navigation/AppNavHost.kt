@@ -24,6 +24,7 @@ sealed class Screen(val route: String) {
     data object Home : Screen("today")
     data object Control : Screen("track")
     data object Analytics : Screen("insights")
+    data object History : Screen("history")
     data object Settings : Screen("settings")
     data object Security : Screen("security")
     data object Camera : Screen("camera")
@@ -52,7 +53,12 @@ fun AppNavHost(
         composable(Screen.Control.route) {
             TrackScreen(viewModel = hiltViewModel(), onSetup = { navController.navigate(Screen.Onboarding.route) })
         }
-        composable(Screen.Analytics.route) { InsightsScreen(viewModel = hiltViewModel()) }
+        composable(Screen.Analytics.route) {
+            InsightsScreen(viewModel = hiltViewModel(), weatherViewModel = hiltViewModel())
+        }
+        composable(Screen.History.route) {
+            InsightsScreen(viewModel = hiltViewModel(), weatherViewModel = hiltViewModel())
+        }
         composable(Screen.Settings.route) {
             SettingsScreen(viewModel = hiltViewModel(), onNavigateToSecurity = { navController.navigate(Screen.Security.route) })
         }

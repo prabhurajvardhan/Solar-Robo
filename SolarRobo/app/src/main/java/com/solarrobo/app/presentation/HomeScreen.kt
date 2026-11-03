@@ -10,6 +10,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.material3.Slider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Settings
@@ -22,17 +26,26 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.solarrobo.app.weather.WeatherUiState
 import com.solarrobo.core.contracts.AccessMode
+import com.solarrobo.core.ui.components.MetricTile
+import com.solarrobo.core.ui.components.SolarPanelHero
 import com.solarrobo.core.ui.theme.LocalAccessMode
 import com.solarrobo.core.ui.theme.SolarRoboTheme
 import com.solarrobo.core.weather.AdvisoryAction
+import com.solarrobo.app.R
+import com.solarrobo.core.ui.components.AstraCard
+import com.solarrobo.core.ui.components.SectionHeader
+import com.solarrobo.core.ui.components.SourceTag
 
 @Composable
 fun HomeScreen(
@@ -76,12 +89,48 @@ fun HomeScreenContent(
         modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Column {
-                Text("ASTRA", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                Text("Dashboard", style = MaterialTheme.typography.headlineMedium)
+                Text("ASTRA", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.primary)
+                Text("AI solar tracker", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Text(if (mode == AccessMode.OPERATOR) "Operator" else "Viewer", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Image(painterResource(R.drawable.astra_home_hero), "ASTRA solar panel", Modifier.fillMaxWidth().clip(RoundedCornerShape(28.dp)), contentScale = ContentScale.Crop)
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("Clean Energy", style = MaterialTheme.typography.headlineLarge)
+            Text("Smarter Motion", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
+            Text("AI powered solar tracking for maximum energy, always.", style = MaterialTheme.typography.bodyLarge)
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            MetricTile("Current Power", "Not measured", "Not measured", Modifier.weight(1f))
+            MetricTile("Today's Energy", "Not measured", "Not measured", Modifier.weight(1f))
+        }
+        AstraCard {
+            SectionHeader("Sun Position", if (state.isConnected) "Live" else "Not measured")
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                    Text(state.sunAzimuthDeg?.let { "%.0f°".format(it) } ?: "Not measured", style = MaterialTheme.typography.headlineMedium)
+                    Text("Azimuth", style = MaterialTheme.typography.bodySmall)
+                    SourceTag(if (state.sunAzimuthDeg == null) "Not measured" else "Calculated")
+                }
+                Column(horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                    Text(state.sunElevationDeg?.let { "%.0f°".format(it) } ?: "Not measured", style = MaterialTheme.typography.headlineMedium)
+                    Text("Elevation", style = MaterialTheme.typography.bodySmall)
+                    SourceTag(if (state.sunElevationDeg == null) "Not measured" else "Calculated")
+                }
+            }
+        }
+        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.surfaceVariant).padding(4.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
+            Button(onClick = { onNavigateToRoute("track") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(20.dp)) { Text("Auto Track") }
+            OutlinedButton(onClick = { onNavigateToRoute("track") }, modifier = Modifier.weight(1f)) { Text("Manual") }
+            OutlinedButton(onClick = { onNavigateToRoute("settings") }, modifier = Modifier.weight(1f)) { Text("Schedule") }
+        }
+        AstraCard {
+            SectionHeader("Panel Position", "Real tracker state")
+            Text(state.panelAngleDeg?.let { "%.1f°".format(it) } ?: "Not measured", style = MaterialTheme.typography.headlineMedium)
+            Slider(value = (state.panelAngleDeg ?: 0f).coerceIn(0f, 90f), onValueChange = {}, enabled = false, modifier = Modifier.fillMaxWidth())
+            SourceTag(if (state.panelAngleDeg == null) "Not measured" else "Estimate")
         }
         if (state.isLoading) {
             Card(Modifier.fillMaxWidth()) {
@@ -102,20 +151,22 @@ fun HomeScreenContent(
                 }
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                DashboardMetricCard(
-                    title = "Panel angle",
+                MetricTile(
+                    label = "Panel angle",
                     value = state.panelAngleDeg?.let { "%.1f°".format(it) } ?: "Not measured",
-                    note = if (state.panelAngleDeg == null) "Camera estimate unavailable" else "Camera-derived estimate · no encoder"
-                , modifier = Modifier.weight(1f))
-                DashboardMetricCard(
-                    title = "Solar target",
-                    value = state.targetAngleDeg?.let { "%.1f°".format(it) } ?: "Not available",
-                    note = "Calculated single-axis angle"
-                , modifier = Modifier.weight(1f))
+                    source = if (state.panelAngleDeg == null) "Not measured" else "Measured",
+                    modifier = Modifier.weight(1f)
+                )
+                MetricTile(
+                    label = "Solar target",
+                    value = state.targetAngleDeg?.let { "%.1f°".format(it) } ?: "Not measured",
+                    source = "Calculated",
+                    modifier = Modifier.weight(1f)
+                )
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                DashboardMetricCard(title = "Power", value = "Not measured", note = "No electrical meter", modifier = Modifier.weight(1f))
-                DashboardMetricCard(title = "Battery", value = "Not measured", note = "No battery telemetry", modifier = Modifier.weight(1f))
+                MetricTile(label = "Power", value = "Not measured", source = "Not measured", modifier = Modifier.weight(1f))
+                MetricTile(label = "Battery", value = "Not measured", source = "Not measured", modifier = Modifier.weight(1f))
             }
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                 Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -153,7 +204,7 @@ fun HomeScreenContent(
             Text(" Open tracker controls")
         }
         OutlinedButton(onClick = onNavigateToSimulator, modifier = Modifier.fillMaxWidth()) { Text("Open simulator · simulated values") }
-        Text("ASTRA v2.0.0-astra · values are local, calculated, camera-estimated, or explicitly Not measured.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("ASTRA 2.1.0-astra-ui · values are local, calculated, camera-estimated, or explicitly Not measured.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

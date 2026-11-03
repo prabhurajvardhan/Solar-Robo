@@ -171,7 +171,7 @@ private fun SettingsContent(
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                 Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("About ASTRA", style = MaterialTheme.typography.titleMedium)
-                    Text("ASTRA v2.0.0-astra", style = MaterialTheme.typography.bodyLarge)
+                    Text("ASTRA 2.1.0-astra-ui", style = MaterialTheme.typography.bodyLarge)
                     Text("Sensorless, single-axis solar tracking · offline-first", style = MaterialTheme.typography.bodySmall)
                 }
             }
